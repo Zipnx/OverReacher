@@ -1,10 +1,12 @@
 
 from .arguments import ScanArguments
 
+from typing import List
 from dataclasses import dataclass
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from rich.progress import Progress, BarColumn, TimeRemainingColumn
+from concurrent.futures import ThreadPoolExecutor, Future, as_completed
+
+from rich.progress import Progress, TaskID, BarColumn, TimeRemainingColumn
 from rich.console import Console
 
 from time import sleep
@@ -18,13 +20,13 @@ class WorkerAssignment:
     method: str
     additional_headers: dict
 
-def worker(assign: WorkerAssignment, progress, task):
+def worker(assign: WorkerAssignment, progress: Progress, task: TaskID):
 
     sleep(1)
     progress.advance(task)
 
     if '8080' in assign.target:
-        console.print(f'[green] Status:[/green] {assign.method} {assign.target}')
+        console.print(f'[green]Status:[/green] {assign.method} {assign.target}')
 
     return f'executed'
 
@@ -33,6 +35,8 @@ def scan(args: ScanArguments) -> None:
     '''
     Execute the scan given the supplied arguments
     '''
+    
+    results: list = []
 
     with Progress(
         "[progress.description]{task.description}",
@@ -43,18 +47,25 @@ def scan(args: ScanArguments) -> None:
         console = console,
     ) as prog:
 
-        task = prog.add_task("[cyan]Processing...", total = len(args.targets))
+        task = prog.add_task("[cyan]Running attacks...", total = len(args.targets))
 
         with ThreadPoolExecutor(max_workers = args.threads) as executor:
 
-            futures = []
+            futures: List[Future] = []
 
             for target in args.targets:
 
-                assignment = WorkerAssignment('', target, 'GET', {})
+                assignment: WorkerAssignment = WorkerAssignment('', target, 'GET', {})
 
                 futures.append(
                     executor.submit(worker, assignment, prog, task)
                 )
 
-    
+            for future in as_completed(futures):
+                try:
+                    res = future.result()
+                    results.append(res)
+                except BaseException as e:
+                    console.print(f'[red]Error:[/e] {e}')
+
+    print(len(results))
