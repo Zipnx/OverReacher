@@ -21,5 +21,5 @@
 ## Eye Candy (using rich):
 - [x] Progress bar
 - [ ] Display vulnerable stuff, obvs
-- [ ] Gotta do ASCII art
+- [x] Gotta do ASCII art (banner is more than enough)
 - [ ] Possibly a minimal mode, also --no-color param and env reading
