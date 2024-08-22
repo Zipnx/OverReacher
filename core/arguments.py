@@ -9,6 +9,8 @@ from core.utilities import read_urls_file
 
 from .utilities import filter_urls, read_urls_stdin
 
+from .visuals import info,good,error,warn
+
 @dataclass(init = True)
 class ScanArguments:
     targets: list
@@ -90,12 +92,13 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
     elif raw_args.inputs is not None:
         urls = read_urls_file(raw_args.inputs)
 
-    print(f'Loaded {len(urls)} targets.')
 
     if len(urls) == 0:
-        print('No targets, exitting')
+        error('No targets, exitting')
         return None
-    
+
+    good(f'Loaded [red]{len(urls)}[/red] targets.')
+ 
     # ==== HANDLE OTHER PARAMS ====
     
 

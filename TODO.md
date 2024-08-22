@@ -2,13 +2,13 @@
 # TODO: 
 
 ## Inputs:
-- [ ] Input for 1 or more targets separated by commas
-- [ ] Input for a file containing a list of targets
-- [ ] If non of the above, read from stdin
-- [ ] Input for number of threads to use
-- [ ] Input for a path for an output file
-- [ ] Input for output type, TXT/JSON
-- [ ] Input for HTTP Header addition
+- [x] Input for 1 or more targets separated by commas
+- [x] Input for a file containing a list of targets
+- [x] If non of the above, read from stdin
+- [x] Input for number of threads to use
+- [x] Input for a path for an output file
+- [x] Input for output type, TXT/JSON
+- [x] Input for HTTP Header addition
 - [ ] Input for limiting volume of requests per second
 
 ## Functionality:
@@ -19,7 +19,7 @@
 - [ ] Multiple save types
 
 ## Eye Candy (using rich):
-- [ ] Progress bar
+- [x] Progress bar
 - [ ] Display vulnerable stuff, obvs
 - [ ] Gotta do ASCII art
 - [ ] Possibly a minimal mode, also --no-color param and env reading

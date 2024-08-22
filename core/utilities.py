@@ -6,6 +6,8 @@ from os.path import exists as fileExists
 from os.path import isdir  as isDirectory
 import os
 
+from .visuals import good,info,warn,error
+
 URL_REGEX = re.compile(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)')
 
 def filter_urls(urls: List[str]) -> List[str]:
@@ -36,7 +38,7 @@ def read_urls_stdin() -> List[str]:
         data = sys.stdin.buffer.readlines()
         lines = [line.decode('utf-8').strip('\n\r') for line in data]
     except BaseException as e:
-        print(f'Error reading targets from stdin: {e}')
+        error(f'Error reading targets from stdin: {e}')
         return []
 
     return filter_urls(lines)
@@ -53,7 +55,7 @@ def read_urls_file(path: str) -> List[str]:
     '''
     
     if not is_file(path):
-        print('Not a valid input file!')
+        error('Not a valid input file!')
         return []
     
     with open(path, 'r') as f:
