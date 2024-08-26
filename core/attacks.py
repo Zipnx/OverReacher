@@ -1,5 +1,6 @@
 
 from typing import List
+from enum import IntEnum
 from dataclasses import dataclass
 
 import urllib3
@@ -27,18 +28,8 @@ attack_config_schema = {
                     "sdomain-separator": {"type": "string"},
                 } 
             },
-            "response": {
-                "type": "object",
-                "properties": {
-                    "ACAO_WILDCARD": {"type": "string"},
-                    "ACAO_NULL": {"type": "string"},
-                    "3RD_PARTY": {"type": "string"},
-                    "ACAO_EQUAL_ORIGIN": {"type": "string"},
-                    "ACAO_EQUAL_OTHER": {"type": "string"}
-                }
-            }
         },
-        "required": ["name", "request", "response"]
+        "required": ["name", "request"]
     }
 }
 
@@ -49,6 +40,11 @@ result_messages = {
     'ARBITRARY_DATA': 'Arbitrary data is reflected in the ACAO header',
     'ALL_REFLECTED': 'The Origin payload is reflected on the header'
 }
+
+class ExploitStatus(IntEnum):
+    NON_EXPLOITABLE = 0
+    MAYBE_EXPLOITABLE = 1
+    EXPLOITABLE = 2
 
 class RequestAction:
     def __init__(self, action_json: dict) -> None:
@@ -94,11 +90,11 @@ class AttackResult:
     method: str
     
     attack: Attack
-    vulnerable: bool
+    exploitation: ExploitStatus
 
     allow_origin: str
     allow_credentials: bool
-    messages: List[str]
+    result: str
 
 
 def load_attacks(filepath: str) -> List[Attack]:
@@ -153,16 +149,6 @@ def form_attack_origin(options: RequestAction, target: str) -> str:
     
     return f'{parsed_target.scheme}://{root}'
 
-def form_attack_result_messages(target: str, payload: str, allowOrigin: str, allowCreds: bool) -> List[str]:
-    
-    if payload == 'no-origin':
-        if allowOrigin == '*':
-            return [] # Not exploitable
-        
-        root = urlparse(payload).netloc
-
-    return []
-
 def execute_attack(
     attack: Attack, 
     target: str, 
@@ -174,21 +160,28 @@ def execute_attack(
 
     res = AttackResult(
         url = target, payload = payload,
-        method = method, attack = attack, vulnerable = False, 
+        method = method, attack = attack, exploitation = ExploitStatus.NON_EXPLOITABLE, 
 
         allow_origin = '',
         allow_credentials = False,
-        messages = []
+        result = ''
     )
     
 
-    req_headers = {}
+    req_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip',
+        'DNT': '1',
+        'Connection': 'close',
+    }
 
     if not attack.request_action.is_passive():
         req_headers['Origin'] = payload
 
     try:
-        r = requests.request(method, target, headers = req_headers, verify = False)
+        r = requests.request(method, target, headers = req_headers, verify = False, timeout = 10)
     except requests.exceptions.TooManyRedirects:
         error(f'Target {target} skipped due to redirects')
         return res
@@ -202,16 +195,34 @@ def execute_attack(
     
     acao = r.headers.get('Access-Control-Allow-Origin')
     acac = r.headers.get('Access-Control-Allow-Credentials')
-    
+    #print(acao)    
     if not acac: 
         acac = False
     else:
         acac = 'true' in acac
-
+    
     if not acao: return res # Not vulnerable
     
-    res.messages = form_attack_result_messages(target, payload, acao, acac) 
-    res.vulnerable = len(res.messages) > 0
+    res.allow_origin = acao
+    res.allow_credentials = acac
+
+    target_root = urlparse(target).netloc
+    result_root = urlparse(acao).netloc
+    
+
+    if payload == 'no-origin':
+        if acao == '*':
+            res.result = 'WildCard ACAO'
+            return res
+        
+        if target_root != result_root:
+            res.result = 'Target has a 3rd Party set as allowed'
+            res.exploitation = ExploitStatus.MAYBE_EXPLOITABLE
+            return res
+    
+    if payload == acao:
+        res.result = 'Payload reflected!'
+        res.exploitation = ExploitStatus.EXPLOITABLE
 
     return res
 

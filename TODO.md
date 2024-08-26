@@ -12,14 +12,17 @@
 - [ ] Input for limiting volume of requests per second
 
 ## Functionality:
-- [ ] Check for wildcard,suffix,prefix,etc...
-- [ ] Check different HTTP methods
+- [x] Check for wildcard,suffix,prefix,etc...
+- [x] Check different HTTP methods
 - [ ] Add custom headers to requests
-- [ ] Multithreading
+- [x] Multithreading
 - [ ] Multiple save types
 
 ## Eye Candy (using rich):
 - [x] Progress bar
-- [ ] Display vulnerable stuff, obvs
+- [x] Display vulnerable stuff, obvs
 - [x] Gotta do ASCII art (banner is more than enough)
 - [ ] Possibly a minimal mode, also --no-color param and env reading
+
+# Additional:
+- [ ] Make it so if a host errors, it work be retried by other attacks or currently running threads
