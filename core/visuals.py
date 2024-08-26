@@ -15,7 +15,7 @@ def display_banner(version: str) -> None:
     console.print(f'\tBy [red]Zipnx[/red] - Version: [green]{version}[/green]\n')
 
 def info(msg: str) -> None:
-    console.print(f'[teal][INFO][/teal] {msg}')
+    console.print(f'[cyan][INFO][/cyan] {msg}')
 
 def good(msg: str) -> None:
     console.print(f'[green][GOOD][/green] {msg}')

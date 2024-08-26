@@ -5,6 +5,11 @@ import sys, re, select
 from os.path import exists as fileExists
 from os.path import isdir  as isDirectory
 import os
+from urllib.parse import urlparse
+
+from jsonschema import validate
+import jsonschema
+from urllib3.exceptions import URLSchemeUnknown
 
 from .visuals import good,info,warn,error
 
@@ -73,3 +78,29 @@ def is_file(filepath: str) -> bool:
     '''
 
     return fileExists(filepath) and not isDirectory(filepath)
+
+def get_host(url: str) -> str:
+
+    if URL_REGEX.match(url) is None: return url
+
+    return urlparse(url).netloc
+
+def validate_attacks_json(attack_info: dict, schema: dict) -> bool:
+    '''
+    Validate the schema of the attack info JSON
+    
+    Args:
+        attack_info (dict): Attack info JSON
+        schema (dict): Required schema
+
+    Returns:
+        bool: Whether the schema is valid or not
+    '''
+
+    try:
+        validate(instance = attack_info, schema = schema)
+        return True
+
+    except jsonschema.exceptions.ValidationError as e:
+        error(f'Error parsing attack info JSON: {e.message}')
+        return False

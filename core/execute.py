@@ -1,5 +1,7 @@
 
 from .arguments import ScanArguments
+from .attacks import Attack, AttackResult, load_attacks, execute_attack
+from .visuals import good,info,error,warn,console
 
 from typing import List
 from dataclasses import dataclass
@@ -11,31 +13,47 @@ from rich.console import Console
 
 from time import sleep
 
-console = Console()
-
 @dataclass(init = True)
 class WorkerAssignment:
-    test_type: str
+    attack: Attack
     target: str
     method: str
     additional_headers: dict
 
-def worker(assign: WorkerAssignment, progress: Progress, task: TaskID):
+def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> AttackResult:
 
-    sleep(1)
+    result = execute_attack(assign.attack, assign.target, assign.method, assign.additional_headers)
+
     progress.advance(task)
 
-    if '8080' in assign.target:
+    if result.vulnerable:
         console.print(f'[green]Status:[/green] {assign.method} {assign.target}')
 
-    return f'executed'
+    return result
 
 
 def scan(args: ScanArguments) -> None:
     '''
     Execute the scan given the supplied arguments
     '''
+
+    # Setup worker jobs
     
+    assignments: List[WorkerAssignment] = []
+    attacks: List[Attack] = load_attacks('./attacks/attacks.json')
+
+    for target in args.targets:
+        for method in args.http_methods:
+            for attack in attacks:
+
+                assignments.append(WorkerAssignment(
+                    attack = attack, target = target, method = method, additional_headers = {} # TODO: Additional headers
+                ))
+    
+    info(f'Executing {len(assignments)} attacks.')
+
+    # Execute workers
+
     results: list = []
 
     with Progress(
@@ -47,15 +65,13 @@ def scan(args: ScanArguments) -> None:
         console = console,
     ) as prog:
 
-        task = prog.add_task("[cyan]Running attacks...", total = len(args.targets))
+        task = prog.add_task("[cyan]Running attacks...", total = len(assignments))
 
         with ThreadPoolExecutor(max_workers = args.threads) as executor:
 
             futures: List[Future] = []
 
-            for target in args.targets:
-
-                assignment: WorkerAssignment = WorkerAssignment('', target, 'GET', {})
+            for assignment in assignments:
 
                 futures.append(
                     executor.submit(worker, assignment, prog, task)
@@ -66,6 +82,7 @@ def scan(args: ScanArguments) -> None:
                     res = future.result()
                     results.append(res)
                 except BaseException as e:
-                    console.print(f'[red]Error:[/e] {e}')
+                    error(f'[red]Error:[/red] {e}')
+                    #raise e
 
     print(len(results))
