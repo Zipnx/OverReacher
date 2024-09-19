@@ -10,6 +10,7 @@
 - [x] Input for output type, TXT/JSON
 - [x] Input for HTTP Header addition
 - [ ] Input for limiting volume of requests per second
+- [ ] Cluster results to a easily viewable format
 
 ## Functionality:
 - [x] Check for wildcard,suffix,prefix,etc...

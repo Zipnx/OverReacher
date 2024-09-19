@@ -13,6 +13,8 @@ from .visuals import good,info,warn,error
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+skip_cache = []
+
 attack_config_schema = {
     "type": "array",
     "items": {
@@ -167,6 +169,8 @@ def execute_attack(
         result = ''
     )
     
+    if target in skip_cache: 
+        return res
 
     req_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.',
@@ -183,7 +187,9 @@ def execute_attack(
     try:
         r = requests.request(method, target, headers = req_headers, verify = False, timeout = 10)
     except requests.exceptions.TooManyRedirects:
-        error(f'Target {target} skipped due to redirects')
+        if target not in skip_cache:
+            error(f'Target {target} skipped due to redirects')
+        skip_cache.append(target)
         return res
 
     except requests.exceptions.Timeout or requests.exceptions.ConnectionError:

@@ -27,18 +27,20 @@ def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> Attack
     progress.advance(task)
 
     if len(result.result) > 0:
-        #console.print(f'[red][FOUND][/red] [green]{assign.method}[/green] {assign.target}')
-        #console.print(f'[red][FOUND][/red] \t - Attack: {assign.attack.name}')
+        console.print(f'[red][FOUND][/red] [green]{assign.method}[/green] {assign.target} ({assign.attack.name})')
+        '''
+        console.print(f'[red][FOUND][/red] \t - Attack: {assign.attack.name}')
         #console.print(f'[red][FOUND][/red] \t - Result: [cyan]{result.result}[/cyan]')
         #console.print(f'[red][FOUND][/red] \t - Details: {result.payload} -> {result.allow_origin}')
         #console.print(f'[red][FOUND][/red] \t - Allow Credentials: [red]{result.allow_credentials}[/red]\n')
 
 
-        console.print(f'''[red][FOUND][/red] [green]{assign.method}[/green] {assign.target}
+        console.print(f\'''[red][FOUND][/red] [green]{assign.method}[/green] {assign.target}
 [red][FOUND][/red] \t - Attack: {assign.attack.name}
 [red][FOUND][/red] \t - Result: [cyan]{result.result}[/cyan]
 [red][FOUND][/red] \t - Details: {result.payload} -> {result.allow_origin}
-[red][FOUND][/red] \t - Allow Credentials: [red]{result.allow_credentials}[/red]\n''')
+[red][FOUND][/red] \t - Allow Credentials: [red]{result.allow_credentials}[/red]\n\''')
+        '''
 
     return result
 
