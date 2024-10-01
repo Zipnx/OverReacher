@@ -1,15 +1,15 @@
 
+import json
 from .arguments import ScanArguments
 from .attacks import Attack, AttackResult, ExploitStatus, load_attacks, execute_attack
 from .visuals import good,info,error,warn,console
 
-from typing import List
+from typing import List, MutableMapping
 from dataclasses import dataclass
 
 from concurrent.futures import ThreadPoolExecutor, Future, as_completed
 
 from rich.progress import Progress, TaskID, BarColumn, TimeRemainingColumn
-from rich.console import Console
 
 from time import sleep
 
@@ -45,7 +45,7 @@ def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> Attack
     return result
 
 
-def scan(args: ScanArguments) -> None:
+def scan(args: ScanArguments) -> dict:
     '''
     Execute the scan given the supplied arguments
     '''
@@ -98,4 +98,44 @@ def scan(args: ScanArguments) -> None:
                     error(f'[red]Error:[/red] {e}')
                     #raise e
 
-    print(len(results))
+    return format_scan_result(results) 
+
+
+def format_scan_result(results: List[AttackResult]) -> dict:
+    '''
+    Take the list of all the scan results and parse them into something more easily readable
+
+    Args:
+        results (List[AttackResult]): List of AttackResult objects from the scan
+
+    Returns:
+        dict: JSON Result data
+    '''
+
+    # First parse it into a dict of target -> []results
+
+    target_results: MutableMapping = {}
+
+    for res in results:
+        
+        if res.exploitation == ExploitStatus.NON_EXPLOITABLE: continue
+        
+        if res.url not in target_results:
+            target_results[res.url] = []
+        
+
+        target_results[res.url].append({
+            'attack': res.attack.name,
+            'method': res.method,
+            'exploitable': res.exploitation,
+            'payload': res.payload,
+            'result': res.result,
+            'allow_origin': res.allow_origin,
+            'allow_creds': res.allow_credentials
+        })
+    
+    # Cluster the same attack type with different http methods
+
+    result_dict = {}
+    return target_results
+

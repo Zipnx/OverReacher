@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from rich.console import Console
 
 console = Console()
@@ -25,3 +26,13 @@ def error(msg: str) -> None:
 
 def warn(msg: str) -> None:
     console.print(f'[yellow][WARN][/yellow] {msg}')
+
+def display_scan_results(scan_output: dict) -> None:
+    
+    for target in scan_output:
+
+        target_res = scan_output[target]
+
+        console.print(f'''[red][Report][/red] {target} :''')
+        print(target_res)
+

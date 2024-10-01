@@ -1,0 +1,220 @@
+{
+    "https://ui.glassdoor.com/": [
+        {
+            "attack": "Target returns the following passively:",
+            "method": "GET",
+            "exploitable": 1,
+            "payload": "no-origin",
+            "result": "Target has a 3rd Party set as allowed",
+            "allow_origin": "null",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to reflect arbitrary data",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://",
+            "result": "Payload reflected!",
+            "allow_origin": "https://",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to set an arbitrary foreign origin",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://example.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://example.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to append data after the root origin",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://ui.glassdoor.com.example.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://ui.glassdoor.com.example.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to append, by bypassing using an underscore",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://ui.glassdoor.com_.example.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://ui.glassdoor.com_.example.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to append data after the root origin",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://ui.glassdoor.comexample.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://ui.glassdoor.comexample.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to append, by bypassing using a tick",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://ui.glassdoor.com%60.example.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://ui.glassdoor.com%60.example.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to exploit unescaped dot regex",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://uixglassdoor.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://uixglassdoor.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Response to a null origin",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://",
+            "result": "Payload reflected!",
+            "allow_origin": "https://",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to set arbitrary subdomains",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://evil.ui.glassdoor.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://evil.ui.glassdoor.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to append, by bypassing using a tick but no dot",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://ui.glassdoor.com%60example.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://ui.glassdoor.com%60example.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to set arbitrary data prepended to the target",
+            "method": "GET",
+            "exploitable": 2,
+            "payload": "https://evilui.glassdoor.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://evilui.glassdoor.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to reflect arbitrary data",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://",
+            "result": "Payload reflected!",
+            "allow_origin": "https://",
+            "allow_creds": true
+        },
+        {
+            "attack": "Target returns the following passively:",
+            "method": "POST",
+            "exploitable": 1,
+            "payload": "no-origin",
+            "result": "Target has a 3rd Party set as allowed",
+            "allow_origin": "null",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to set an arbitrary foreign origin",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://example.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://example.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to append data after the root origin",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://ui.glassdoor.comexample.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://ui.glassdoor.comexample.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to append, by bypassing using an underscore",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://ui.glassdoor.com_.example.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://ui.glassdoor.com_.example.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to append, by bypassing using a tick",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://ui.glassdoor.com%60.example.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://ui.glassdoor.com%60.example.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to append data after the root origin",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://ui.glassdoor.com.example.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://ui.glassdoor.com.example.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to exploit unescaped dot regex",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://uixglassdoor.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://uixglassdoor.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to append, by bypassing using a tick but no dot",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://ui.glassdoor.com%60example.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://ui.glassdoor.com%60example.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Response to a null origin",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://",
+            "result": "Payload reflected!",
+            "allow_origin": "https://",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to set arbitrary data prepended to the target",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://evilui.glassdoor.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://evilui.glassdoor.com",
+            "allow_creds": true
+        },
+        {
+            "attack": "Ability to set arbitrary subdomains",
+            "method": "POST",
+            "exploitable": 2,
+            "payload": "https://evil.ui.glassdoor.com",
+            "result": "Payload reflected!",
+            "allow_origin": "https://evil.ui.glassdoor.com",
+            "allow_creds": true
+        }
+    ]
+}
