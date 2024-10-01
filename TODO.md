@@ -2,28 +2,24 @@
 # TODO: 
 
 ## Inputs:
-- [x] Input for 1 or more targets separated by commas
-- [x] Input for a file containing a list of targets
-- [x] If non of the above, read from stdin
-- [x] Input for number of threads to use
-- [x] Input for a path for an output file
-- [x] Input for output type, TXT/JSON
-- [x] Input for HTTP Header addition
 - [ ] Input for limiting volume of requests per second
-- [ ] Cluster results to a easily viewable format
 
 ## Functionality:
 - [x] Check for wildcard,suffix,prefix,etc...
-- [x] Check different HTTP methods
+- [ ] [BUG] Checks for wildcard dont work rn, gonna check later
 - [ ] Add custom headers to requests
 - [x] Multithreading
 - [ ] Multiple save types
+- [x] Change the attack result functionality ffs
+- [ ] [PRIORITY] EXAMPLE: If a host returns allow origin for arbitrary data, no need to continue scanning other attacks
 
 ## Eye Candy (using rich):
-- [x] Progress bar
-- [x] Display vulnerable stuff, obvs
-- [x] Gotta do ASCII art (banner is more than enough)
 - [ ] Possibly a minimal mode, also --no-color param and env reading
+- [ ] Cluster results to a easily viewable format
 
-# Additional:
-- [ ] Make it so if a host errors, it work be retried by other attacks or currently running threads
+# Bugs:
+- [x] The null origin sends "http://"
+- [ ] Verify the scan output json schema
+
+That attack setup shit was overengineers af, will prob delete everything and redo the scanning
+^ Still trash code. should've prob written this in golang

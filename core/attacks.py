@@ -1,238 +1,309 @@
 
-from typing import List
 from enum import IntEnum
+from typing import List, Tuple, Optional, Self
 from dataclasses import dataclass
 
 import urllib3
 from urllib.parse import urlparse
 
-import json, requests
+from copy import deepcopy
+import requests
 
-from .utilities import is_file, validate_attacks_json
-from .visuals import good,info,warn,error
+from core.utilities import is_url
+from core.visuals import good,info,warn,error
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-skip_cache = []
-
-attack_config_schema = {
-    "type": "array",
-    "items": {
-        "type": "object",
-        "properties": {
-            "name": {"type": "string"},
-            "request": {
-                "type": "object",
-                "properties": {
-                    "set-origin": {"type": "string"},
-                    "append-root": {"type": "string"},
-                    "preppend-root": {"type": "string"},
-                    "sdomain-separator": {"type": "string"},
-                } 
-            },
-        },
-        "required": ["name", "request"]
-    }
-}
-
-result_messages = {
-    '3RD_PARTY': "A 3rd-Party host is in the ACAO header",
-    'NULL_ACAO': "The resulting ACAO header is \"null\"",
-    'ALL_WILDCARD': 'The resulting ACAO header is *',
-    'ARBITRARY_DATA': 'Arbitrary data is reflected in the ACAO header',
-    'ALL_REFLECTED': 'The Origin payload is reflected on the header'
-}
-
 class ExploitStatus(IntEnum):
-    NON_EXPLOITABLE = 0
-    MAYBE_EXPLOITABLE = 1
+    SAFE = 0
+    MAYBE = 1
     EXPLOITABLE = 2
-
-class RequestAction:
-    def __init__(self, action_json: dict) -> None:
-
-        self.set_origin:        str | None = None
-        self.append_root:       str | None = None
-        self.preppend_root:     str | None = None
-        self.sdomain_separator: str | None = None
-
-        self.parse_options(action_json)
-
-    def parse_options(self, opts: dict) -> None:
-
-        if 'set-origin' in opts:        self.set_origin = opts['set-origin']
-        if 'append-root' in opts:       self.append_root = opts['append-root']
-        if 'preppend-root' in opts:     self.preppend_root = opts['preppend-root']
-        if 'sdomain-separator' in opts: self.sdomain_separator = opts['sdomain-separator']
-    
-    def is_passive(self) -> bool:
-        return self.set_origin is None and self.append_root is None and self.preppend_root is None and self.sdomain_separator is None
-
+    UNKNOWN = 3
 
 @dataclass(init = True)
-class Attack:
+class AttackMethod:
     name: str
 
-    request_action: RequestAction
+    success_msg: str
+    
+    halt_on_success: bool = False
+    halt_on_fail: bool = False
+    
+    process: dict | None = None
+    
+    aid: int = -1
+    prev_id: int = -1
+
+    def set_proc(self, process_json: dict | None) -> Self:
+        self.process = process_json
+        return self
+
+@dataclass(init = True)
+class Target:
+    _scheme: str
+    root: str
+    _path: str
     
     @staticmethod
-    def from_json(raw_data: dict) -> 'Attack':
-        
-        req_action: RequestAction  = RequestAction(raw_data['request'])
+    def from_url(url: str) -> Optional['Target']:
+        if not is_url(url): return None
 
-        return Attack(
-            name = raw_data['name'],
-            request_action = req_action,
+        parse_res = urlparse(url)
+
+        return Target(
+            _scheme = parse_res.scheme,
+            root = parse_res.netloc,
+            _path = parse_res.path
         )
+
+    def to_url(self):
+        return f'{self._scheme}://{self.root}{self._path if len(self._path) > 0 else ""}'
+
+
+DEFAULT_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip',
+    'DNT': '1',
+    'Connection': 'close',
+}
+
+# This defines the attacks, will make it more customizable later on
+# The order of this list indicates in what order the requests will be sent to the target
+EXPLOITS: List[AttackMethod] = [
+
+    # This will do a passive check to see what the host returns
+    AttackMethod(
+        name            = 'Passive Tests',
+        success_msg     = '', # On this, the wild card / third party msg is set during the test
+    ).set_proc(None),
+
+    # This is the case where the host does not reflect an origin, and will halt the scan for this host
+    AttackMethod(
+        name            = 'Normal reflection test',
+        success_msg     = '',
+        halt_on_fail    = True # No point to keep going if this is blocked
+    ),
+    
+    # Arbitrary origin data
+    AttackMethod(
+        name            = 'Arbitrary data reflection',
+        success_msg     = 'Target reflects on the ACAO header any data in the origin header',
+        halt_on_success = False # Do the arbitrary url test too
+    ).set_proc({
+        'set-origin': 'random_data_lel'
+    }),
+
+    AttackMethod(
+        name            = 'Null origin',
+        success_msg     = 'Target accepts null origin',
+        halt_on_success = False
+    ).set_proc({
+        'set-null': True
+    }),
+
+    # Different url test case
+    AttackMethod(
+        name            = 'Arbitrary url reflection',
+        success_msg     = 'Target allows requests from ANY domain',
+        halt_on_success = True
+
+    ).set_proc({
+        'set-origin-url': 'example.com'
+    }),
+
+    # The post domain wildcard options
+    AttackMethod(
+        name            = 'Post domain wildcard',
+        success_msg     = 'Target allows requests from any domain with it as a prefix',
+        halt_on_success = False # Do the test with it as a subdomain too
+    ).set_proc({
+        'append-root': 'example.com'
+    }),
+
+    AttackMethod(
+        name            = 'Post domain wildcard (subdomain)',
+        success_msg     = 'Target allows requests from any domain with it as a subdomain',
+        halt_on_success = True
+    ).set_proc({
+        'append-root': '.example.com'
+    }),
+
+    AttackMethod(
+        name            = 'Pre domain wildcard',
+        success_msg     = 'Target allows requests from any domain with it a s postfix',
+        halt_on_success = True
+    ).set_proc({
+        'preppend-root': 'evil'
+    }),
+
+    #
+    # APPEND BYPASS CHECKS 
+    #
+
+    AttackMethod(
+        name            = 'Underscore append bypass',
+        success_msg     = 'Can bypass checking by appending an underscore (_)',
+        halt_on_success = False # Do all the bypass checks to find out
+    ).set_proc({
+        'append-root': '_.example.com'
+    }),
+
+    AttackMethod(
+        name            = 'Backtick append bypass',
+        success_msg     = 'Can bypass checking by appending a backtick (`)',
+        halt_on_success = False
+    ).set_proc({
+        'append-root': '%60.example.com'
+    }),
+
+    AttackMethod(
+        name            = 'Backtick append bypass, electric boogaloo',
+        success_msg     = 'Can bypass checking by appending an underscore',
+        halt_on_success = True # Do all the bypass checks to find out
+    ).set_proc({
+        'append-root': '%60example.com'
+    }),
+
+    #
+    # BROKEN REGEX TEST
+    #
+
+    AttackMethod(
+        name            = 'Regex unescaped dot',
+        success_msg     = 'Due to broken regex, the host interpretes a dot as any',
+        halt_on_success = True # Do all the bypass checks to find out
+    ).set_proc({
+        # Here we need to replace a subdomain's dot separator, so it's functionality will be a bit funky
+        'replace-sdomain-sep': 'x'
+    }),
+
+
+]
 
 @dataclass(init = True)
 class AttackResult:
-    url: str
-    payload: str
+    target: Target
     method: str
-    
-    attack: Attack
-    exploitation: ExploitStatus
 
+    payload: str | None
     allow_origin: str
-    allow_credentials: bool
-    result: str
+    allow_creds: bool
 
+    msg: str = ''
 
-def load_attacks(filepath: str) -> List[Attack]:
+# Url & method combinations in this list will be ignored further in the scan
+IGNORE_LIST: List[Tuple[str, str]] = []
+
+# Urls in this list will be passed (deemed offline / blocked)
+SKIP_LIST: List[str] = []
+
+# TODO: Make the level and prev settings work as intended
+def process_attacks():
+    return EXPLOITS
+
+def form_payload(target: Target, exploit: AttackMethod) -> str | None:
     
-    info('Loading attack information...')
+    if exploit.process is None: return
+    proc = exploit.process
 
-    if not is_file(filepath):
-        error(f'Invalid attacks file: {filepath}')
-        return []
+    for option in proc:
 
-    with open(filepath, 'r') as f:
-        data = json.load(f)
+        if option == 'set-origin':
+            # This forces a return
+            return proc[option]
 
-    if not validate_attacks_json(data, attack_config_schema):
-        error('Unable to load attacks')
-        return []
+        elif option == 'set-origin-url': 
+            target.root = proc[option]
+
+        elif option == 'set-null': 
+            # This also forces a return
+            return 'null'
+
+        elif option == 'append-root': 
+            target.root += proc[option]
+
+        elif option == 'preppend-root':
+            target.root = proc[option] + target.root
+
+        elif option == 'replace-sdomain-sep':
+            sep_count = target.root.count('.')
+            target.root = target.root.replace('.', proc[option], sep_count - 1)
     
-    attacks: List[Attack] = []
+    return target.to_url()
 
-    for i, attack_json in enumerate(data):
-        attack = Attack.from_json(attack_json)
-
-        if len(attack.name) == 0:
-            error('Unable to load attack #{i}')
-            return []
+def execute_attack(target: Target, method: str, exploit: AttackMethod, additional_headers: dict = {}) -> Optional[AttackResult]:
     
-        attacks.append(attack)
+    headers = {**DEFAULT_HEADERS, **additional_headers}
     
-    return attacks
+    target_url = target.to_url()
 
-def form_attack_origin(options: RequestAction, target: str) -> str:
+    # This is theoretically thread safe, idc
+    if target_url in SKIP_LIST: return None
+    if (target_url, method) in IGNORE_LIST: return None
     
-    if options.is_passive(): return 'no-origin'
-
-    parsed_target = urlparse(target)
-
-    if options.set_origin is None:
-        root = parsed_target.netloc
-    else:
-        root = urlparse(options.set_origin).netloc # This can error fatally
-
-    if options.append_root is not None:
-        root += options.append_root
-
-    if options.preppend_root is not None:
-        root = options.preppend_root + root
-
-    if options.sdomain_separator is not None:
-        dots = root.count('.')
-        
-        root = root.replace('.', options.sdomain_separator, dots - 1)
+    payload = form_payload(deepcopy(target), exploit)
     
-    return f'{parsed_target.scheme}://{root}'
-
-def execute_attack(
-    attack: Attack, 
-    target: str, 
-    method: str, 
-    added_headers: dict = {}
-) -> AttackResult:
+    if payload is not None:
+        headers['Origin'] = payload 
     
-    payload = form_attack_origin(attack.request_action, target) 
-
-    res = AttackResult(
-        url = target, payload = payload,
-        method = method, attack = attack, exploitation = ExploitStatus.NON_EXPLOITABLE, 
-
-        allow_origin = '',
-        allow_credentials = False,
-        result = ''
-    )
-    
-    if target in skip_cache: 
-        return res
-
-    req_headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-        'Accept-Encoding': 'gzip',
-        'DNT': '1',
-        'Connection': 'close',
-    }
-
-    if not attack.request_action.is_passive():
-        req_headers['Origin'] = payload
-
     try:
-        r = requests.request(method, target, headers = req_headers, verify = False, timeout = 10)
+        r = requests.request(
+            method, target.to_url(), headers = headers, verify = False, timeout = 10
+        )
     except requests.exceptions.TooManyRedirects:
-        if target not in skip_cache:
-            error(f'Target {target} skipped due to redirects')
-        skip_cache.append(target)
-        return res
+        error(f'Target {target_url} skipped due to redirects')
+        
+        SKIP_LIST.append(target_url)
+        return
 
     except requests.exceptions.Timeout or requests.exceptions.ConnectionError:
-        return res
+        error(f'Connection error to {target_url}')
+        SKIP_LIST.append(target_url)
+        return
 
     except requests.exceptions.RequestException as e:
-        error(f'Error while attacking {target}: {e}')
-        return res
+        error(f'Error while attacking {target_url}: {str(e)}')
+        SKIP_LIST.append(target_url)
+        return
     
+    if target_url in SKIP_LIST or (target_url, method) in IGNORE_LIST: return None
+
     acao = r.headers.get('Access-Control-Allow-Origin')
     acac = r.headers.get('Access-Control-Allow-Credentials')
-    #print(acao)    
-    if not acac: 
+
+    if not acac:
         acac = False
     else:
-        acac = 'true' in acac
-    
-    if not acao: return res # Not vulnerable
-    
-    res.allow_origin = acao
-    res.allow_credentials = acac
-
-    target_root = urlparse(target).netloc
+        acac = 'true' in str(acac).lower()
+     
     result_root = urlparse(acao).netloc
-    
 
-    if payload == 'no-origin':
+    if exploit.process is None and acao is not None:
         if acao == '*':
-            res.result = 'WildCard ACAO'
-            return res
-        
-        if target_root != result_root:
-            res.result = 'Target has a 3rd Party set as allowed'
-            res.exploitation = ExploitStatus.MAYBE_EXPLOITABLE
-            return res
+            exploit.success_msg = 'Target has wildcard ACAO'
+
+        elif result_root != target.root:
+            exploit.success_msg = 'Target has a 3rd Party set as allowed'
     
-    if payload == acao:
-        res.result = 'Payload reflected!'
-        res.exploitation = ExploitStatus.EXPLOITABLE
+    vulnerable: bool = acao is not None
+    vulnerable &= acao == payload
+    
+    if ( (not vulnerable) and exploit.halt_on_fail ) or ( vulnerable and exploit.halt_on_success):
+        IGNORE_LIST.append((target_url, method))
 
-    return res
+    if not vulnerable:
+        return
 
+    result: AttackResult = AttackResult(
+        target = target,
+        method = method,
+        
+        payload = payload,
+        allow_origin = acao,
+        allow_creds = acac,
+        msg = exploit.success_msg
+    )
 
-
-
-
+    return result

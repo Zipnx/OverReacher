@@ -15,6 +15,18 @@ from .visuals import good,info,warn,error
 
 URL_REGEX = re.compile(r'https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)')
 
+def is_url(url: str) -> bool:
+    '''
+    Check whether a given string is a valid url
+
+    Args:
+        url (str): String to Check
+
+    Returns:
+        bool: Whether it is a url
+    '''
+    return URL_REGEX.match(url) is not None
+
 def filter_urls(urls: List[str]) -> List[str]:
     '''
     Given a list of possible url strings, it will return a list of only the valid urls
@@ -85,22 +97,3 @@ def get_host(url: str) -> str:
 
     return urlparse(url).netloc
 
-def validate_attacks_json(attack_info: dict, schema: dict) -> bool:
-    '''
-    Validate the schema of the attack info JSON
-    
-    Args:
-        attack_info (dict): Attack info JSON
-        schema (dict): Required schema
-
-    Returns:
-        bool: Whether the schema is valid or not
-    '''
-
-    try:
-        validate(instance = attack_info, schema = schema)
-        return True
-
-    except jsonschema.exceptions.ValidationError as e:
-        error(f'Error parsing attack info JSON: {e.message}')
-        return False
