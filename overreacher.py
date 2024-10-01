@@ -7,7 +7,7 @@ from core.execute import scan
 import json
 
 def main():
-    '''
+    #'''
     display_banner(core.__version__)
 
     args = get_arguments()
@@ -21,7 +21,9 @@ def main():
 
     with open('req.tmp', 'w') as f:
         json.dump(results, f, indent = 4)
-    '''
+    #'''
+    
+    return
 
     with open('req.tmp', 'r') as f:
         data = json.load(f)
