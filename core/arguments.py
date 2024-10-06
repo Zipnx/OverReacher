@@ -17,7 +17,7 @@ class ScanArguments:
     threads: int        = 8
     output_file: str    = ''
     output_format: str  = 'txt'
-    http_methods: list  = field(default_factory = lambda: ['GET', 'POST', 'OPTIONS'])
+    http_methods: list  = field(default_factory = lambda: ['GET', 'POST'])
     http_headers: dict  = field(default_factory = lambda: {})
     color_enabled: bool = True
     max_rps: int        = 100
@@ -47,8 +47,8 @@ def parse_arguments() -> Namespace:
         help = 'Save format (DEFAULT=txt)'
     )
     
-    parser.add_argument('-m', '--methods', type = str, default = 'GET,POST,OPTIONS',
-        help = 'Comma seperated http methods to use (DEFAULT=GET,POST,OPTIONS)'
+    parser.add_argument('-m', '--methods', type = str, default = 'GET,POST',
+        help = 'Comma seperated http methods to use (DEFAULT=GET,POST)'
     )
 
     parser.add_argument('-H', '--header', type = str, action = 'append',

@@ -1,7 +1,7 @@
 
 import json
 from core.arguments import ScanArguments
-from core.attacks import AttackMethod, AttackResult, Target, execute_attack, process_attacks
+from core.attacks import AttackMethod, AttackResult, Target, execute_attack, execute_attacks, process_attacks
 from core.visuals import good,info,error,warn,console
 
 from typing import List, MutableMapping
@@ -17,11 +17,10 @@ from time import sleep
 class WorkerAssignment:
     target_url: str
     http_method: str
-    exploit: AttackMethod
 
     additional_headers: dict = field(default_factory=dict)
 
-def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> AttackResult | None:
+def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> List[AttackResult]:
     
     # The from_url should theoretically never error since the url validity is check before in
     # the reading of the urls
@@ -30,14 +29,14 @@ def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> Attack
 
     if target is None:
         error(f'Target {assign.target_url} is not a url?')
-        return None
+        return []
 
-    result = execute_attack(target, assign.http_method, assign.exploit)
+    results = execute_attacks(target, assign.http_method, additional_headers = assign.additional_headers)
 
     progress.advance(task)
 
-    if result is not None:
-        console.print(f'[red][FOUND][/red] [green]{assign.http_method}[/green] {assign.target_url} ({assign.exploit.name})')
+    for result in results:
+        console.print(f'[red][FOUND][/red] [green]{assign.http_method}[/green] {assign.target_url} ({result.exploit.name})\n\t- {result.msg}')
         '''
         console.print(f'[red][FOUND][/red] \t - Attack: {assign.attack.name}')
         #console.print(f'[red][FOUND][/red] \t - Result: [cyan]{result.result}[/cyan]')
@@ -52,7 +51,7 @@ def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> Attack
 [red][FOUND][/red] \t - Allow Credentials: [red]{result.allow_credentials}[/red]\n\''')
         '''
 
-    return result
+    return results
 
 
 def scan(args: ScanArguments) -> dict:
@@ -67,13 +66,20 @@ def scan(args: ScanArguments) -> dict:
 
     for target in args.targets:
         for method in args.http_methods:
+            '''
             for attack in attacks:
 
                 assignments.append(WorkerAssignment(
                     target_url = target, http_method = method, exploit = attack, additional_headers = {} # TODO: Additional headers
                 ))
+            '''
+            assignments.append(WorkerAssignment(
+                target_url = target,
+                http_method = method,
+                additional_headers = args.http_headers
+            ))
     
-    info(f'Executing {len(assignments)} attacks.')
+    info(f'Executing {len(assignments)} attacks for {len(args.targets)} targets.')
 
     # Execute workers
 
@@ -104,7 +110,7 @@ def scan(args: ScanArguments) -> dict:
                 try:
                     res = future.result()
                     if res is not None:
-                        results.append(res)
+                        results += res
                 except BaseException as e:
                     error(f'[red]Error:[/red] {e}')
                     #raise e
