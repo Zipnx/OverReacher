@@ -25,14 +25,9 @@ class AttackMethod:
     name: str
 
     success_msg: str
-    
-    halt_on_success: bool = False
-    halt_on_fail: bool = False
-    
+    is_passive: bool = False
+
     process: dict | None = None
-    
-    aid: int = -1
-    prev_id: int = -1
 
     def set_proc(self, process_json: dict | None) -> Self:
         self.process = process_json
@@ -77,37 +72,28 @@ EXPLOITS: List[AttackMethod] = [
     AttackMethod(
         name            = 'Passive Tests',
         success_msg     = '', # On this, the wild card / third party msg is set during the test
+        is_passive      = True
     ).set_proc(None),
-
-    # This is the case where the host does not reflect an origin, and will halt the scan for this host
-    AttackMethod(
-        name            = 'Normal reflection test',
-        success_msg     = '',
-        halt_on_fail    = True # No point to keep going if this is blocked
-    ),
-    
-    # Arbitrary origin data
-    AttackMethod(
-        name            = 'Arbitrary data reflection',
-        success_msg     = 'Target reflects on the ACAO header any data in the origin header',
-        halt_on_success = False # Do the arbitrary url test too
-    ).set_proc({
-        'set-origin': 'random_data_lel'
-    }),
 
     AttackMethod(
         name            = 'Null origin',
         success_msg     = 'Target accepts null origin',
-        halt_on_success = False
+        is_passive = True
     ).set_proc({
         'set-null': True
+    }),
+    
+    AttackMethod(
+        name            = 'Arbitrary data reflection',
+        success_msg     = 'Target reflects on the ACAO header any data sent in the origin header'
+    ).set_proc({
+        'set-origin': 'random_data_lel',
     }),
 
     # Different url test case
     AttackMethod(
         name            = 'Arbitrary url reflection',
         success_msg     = 'Target allows requests from ANY domain',
-        halt_on_success = True
 
     ).set_proc({
         'set-origin-url': 'example.com'
@@ -117,7 +103,6 @@ EXPLOITS: List[AttackMethod] = [
     AttackMethod(
         name            = 'Post domain wildcard',
         success_msg     = 'Target allows requests from any domain with it as a prefix',
-        halt_on_success = False # Do the test with it as a subdomain too
     ).set_proc({
         'append-root': 'example.com'
     }),
@@ -125,7 +110,6 @@ EXPLOITS: List[AttackMethod] = [
     AttackMethod(
         name            = 'Post domain wildcard (subdomain)',
         success_msg     = 'Target allows requests from any domain with it as a subdomain',
-        halt_on_success = True
     ).set_proc({
         'append-root': '.example.com'
     }),
@@ -133,7 +117,6 @@ EXPLOITS: List[AttackMethod] = [
     AttackMethod(
         name            = 'Pre domain wildcard',
         success_msg     = 'Target allows requests from any domain with it a s postfix',
-        halt_on_success = True
     ).set_proc({
         'preppend-root': 'evil'
     }),
@@ -145,7 +128,6 @@ EXPLOITS: List[AttackMethod] = [
     AttackMethod(
         name            = 'Underscore append bypass',
         success_msg     = 'Can bypass checking by appending an underscore (_)',
-        halt_on_success = False # Do all the bypass checks to find out
     ).set_proc({
         'append-root': '_.example.com'
     }),
@@ -153,7 +135,6 @@ EXPLOITS: List[AttackMethod] = [
     AttackMethod(
         name            = 'Backtick append bypass',
         success_msg     = 'Can bypass checking by appending a backtick (`)',
-        halt_on_success = False
     ).set_proc({
         'append-root': '%60.example.com'
     }),
@@ -161,7 +142,6 @@ EXPLOITS: List[AttackMethod] = [
     AttackMethod(
         name            = 'Backtick append bypass, electric boogaloo',
         success_msg     = 'Can bypass checking by appending an underscore',
-        halt_on_success = True # Do all the bypass checks to find out
     ).set_proc({
         'append-root': '%60example.com'
     }),
@@ -173,7 +153,6 @@ EXPLOITS: List[AttackMethod] = [
     AttackMethod(
         name            = 'Regex unescaped dot',
         success_msg     = 'Due to broken regex, the host interpretes a dot as any',
-        halt_on_success = True # Do all the bypass checks to find out
     ).set_proc({
         # Here we need to replace a subdomain's dot separator, so it's functionality will be a bit funky
         'replace-sdomain-sep': 'x'
@@ -186,11 +165,12 @@ EXPLOITS: List[AttackMethod] = [
 class AttackResult:
     target: Target
     method: str
-
+    
     payload: str | None
     allow_origin: str
     allow_creds: bool
 
+    exploit : AttackMethod | None = None
     msg: str = ''
 
 # Url & method combinations in this list will be ignored further in the scan
@@ -233,6 +213,28 @@ def form_payload(target: Target, exploit: AttackMethod) -> str | None:
     
     return target.to_url()
 
+def execute_attacks(target: Target, method: str, additional_headers: dict = {}) -> List[AttackResult]:
+    
+    results: List[AttackResult] = []
+
+    for exploit in EXPLOITS:
+        res = execute_attack(target, method, exploit, additional_headers)
+
+        if res is None: continue
+    
+        res.exploit = exploit
+
+        if exploit.is_passive:
+            if len(exploit.success_msg) == 0: continue
+
+        results.append(res)
+
+        if not exploit.is_passive:
+            break
+
+    return results
+
+
 def execute_attack(target: Target, method: str, exploit: AttackMethod, additional_headers: dict = {}) -> Optional[AttackResult]:
     
     headers = {**DEFAULT_HEADERS, **additional_headers}
@@ -264,7 +266,7 @@ def execute_attack(target: Target, method: str, exploit: AttackMethod, additiona
         return
 
     except requests.exceptions.RequestException as e:
-        error(f'Error while attacking {target_url}: {str(e)}')
+        #error(f'Error while attacking {target_url}: {str(e)}')
         SKIP_LIST.append(target_url)
         return
     
@@ -272,6 +274,8 @@ def execute_attack(target: Target, method: str, exploit: AttackMethod, additiona
 
     acao = r.headers.get('Access-Control-Allow-Origin')
     acac = r.headers.get('Access-Control-Allow-Credentials')
+    
+    #print(acao, acac)
 
     if not acac:
         acac = False
@@ -288,10 +292,7 @@ def execute_attack(target: Target, method: str, exploit: AttackMethod, additiona
             exploit.success_msg = 'Target has a 3rd Party set as allowed'
     
     vulnerable: bool = acao is not None
-    vulnerable &= acao == payload
-    
-    if ( (not vulnerable) and exploit.halt_on_fail ) or ( vulnerable and exploit.halt_on_success):
-        IGNORE_LIST.append((target_url, method))
+    vulnerable &= ( (acao == payload) or payload is None )
 
     if not vulnerable:
         return
