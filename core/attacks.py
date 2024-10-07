@@ -14,12 +14,6 @@ from core.visuals import good,info,warn,error
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-class ExploitStatus(IntEnum):
-    SAFE = 0
-    MAYBE = 1
-    EXPLOITABLE = 2
-    UNKNOWN = 3
-
 @dataclass(init = True)
 class AttackMethod:
     name: str
@@ -116,7 +110,9 @@ EXPLOITS: List[AttackMethod] = [
 
     AttackMethod(
         name            = 'Pre domain wildcard',
-        success_msg     = 'Target allows requests from any domain with it a s postfix',
+        success_msg     = 'Target allows requests from any domain with it as a postfix',
+        is_passive      = True # This is hacky but i want the other tests to be executes as well,
+        #                        as this is not that useful on some case
     ).set_proc({
         'preppend-root': 'evil'
     }),
@@ -170,7 +166,7 @@ class AttackResult:
     allow_origin: str
     allow_creds: bool
 
-    exploit : AttackMethod | None = None
+    exploit : AttackMethod
     msg: str = ''
 
 # Url & method combinations in this list will be ignored further in the scan
@@ -304,6 +300,7 @@ def execute_attack(target: Target, method: str, exploit: AttackMethod, additiona
         payload = payload,
         allow_origin = acao,
         allow_creds = acac,
+        exploit = exploit,
         msg = exploit.success_msg
     )
 

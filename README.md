@@ -15,13 +15,13 @@ pip install -r requirements.txt
 
 Then you can view the run options with
 
-`
+```
 python3 overreacher.py -h
 
 or 
 
 python3 overreacher.py --help
-`
+```
 
 ## Usage
 
