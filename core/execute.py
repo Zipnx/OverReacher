@@ -66,19 +66,13 @@ def scan(args: ScanArguments) -> dict:
 
     for target in args.targets:
         for method in args.http_methods:
-            '''
-            for attack in attacks:
-
-                assignments.append(WorkerAssignment(
-                    target_url = target, http_method = method, exploit = attack, additional_headers = {} # TODO: Additional headers
-                ))
-            '''
             assignments.append(WorkerAssignment(
                 target_url = target,
                 http_method = method,
                 additional_headers = args.http_headers
             ))
     
+    info(f'Using {args.threads} threads.')
     info(f'Executing {len(assignments)} attacks for {len(args.targets)} targets.')
 
     # Execute workers
@@ -130,29 +124,27 @@ def format_scan_result(results: List[AttackResult]) -> dict:
     '''
 
     # First parse it into a dict of target -> []results
-    return {} # TODO: Fix later
     target_results: MutableMapping = {}
 
     for res in results:
+         
+        target_url = res.target.to_url()
         
-        if res.exploitation == ExploitStatus.NON_EXPLOITABLE: continue
-        
-        if res.url not in target_results:
-            target_results[res.url] = []
-        
+        if target_url not in target_results:
+            target_results[target_url] = []
 
-        target_results[res.url].append({
-            'attack': res.attack.name,
-            'method': res.method,
-            'exploitable': res.exploitation,
-            'payload': res.payload,
-            'result': res.result,
+        result_json = {
+            'http_method': res.method,
+            'attack_name': res.exploit.name,
+            'attack_result': res.msg,
+            'used_payload': res.payload,
             'allow_origin': res.allow_origin,
-            'allow_creds': res.allow_credentials
-        })
-    
+            'allow_creds': res.allow_creds
+        }
+        
+        target_results[target_url].append(result_json)
+
     # Cluster the same attack type with different http methods
 
-    result_dict = {}
     return target_results
 
