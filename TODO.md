@@ -7,7 +7,7 @@
 
 ## Functionality:
 - [ ] Make the attacks customizable again, this new system is way more appropriate for it
-- [ ] Save result as JSON
+- [x] Save result as JSON
 - [ ] Collect response time, response status code, maybe page title?
 
 ## Eye Candy (using rich):

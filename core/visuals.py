@@ -33,6 +33,16 @@ def display_scan_results(scan_output: dict) -> None:
 
         target_res = scan_output[target]
 
-        console.print(f'''[red][Report][/red] {target} :''')
-        print(target_res)
+        console.print(f'''\n[red][Report][/red] ======= {target} =======''')
+        
+        for result in target_res:
+
+            console.print(f'\t [cyan]{result["http_method"]}[/cyan] {result["attack_name"]}')
+            console.print(f'\t Result: {result["attack_result"]}')
+            console.print(f'\t Payload: {result["used_payload"]}')
+            console.print(f'\t Allow Origin: {result["allow_origin"]}')
+            
+            acac = result['allow_creds']
+
+            console.print(f'\t Allow Credentials: [{"green" if acac else "red"}]{acac}[{"/green" if acac else "/red"}]\n')
 
