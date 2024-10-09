@@ -15,13 +15,7 @@ def main():
     if args is None:
         return
 
-    results = None#scan(args)
-
-    #with open('req.tmp', 'w') as f:
-    #    json.dump(results, f, indent = 4)
-
-    with open('req.tmp', 'r') as f:
-        results = json.load(f)
+    results = scan(args)
 
     display_scan_results(results)
     
