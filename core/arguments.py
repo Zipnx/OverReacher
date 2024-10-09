@@ -41,11 +41,12 @@ def parse_arguments() -> Namespace:
         help = 'Path to an output file'
     )
     
-    parser.add_argument('-f', '--format', 
-        choices = ['txt', 'json'], 
-        default = 'txt',
-        help = 'Save format (DEFAULT=txt)'
-    )
+    # TODO: Implement at some point
+    #parser.add_argument('-f', '--format', 
+    #    choices = ['txt', 'json'], 
+    #    default = 'txt',
+    #    help = 'Save format (DEFAULT=txt)'
+    #)
     
     parser.add_argument('-m', '--methods', type = str, default = 'GET,POST',
         help = 'Comma seperated http methods to use (DEFAULT=GET,POST)'
