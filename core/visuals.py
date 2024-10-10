@@ -1,7 +1,17 @@
 from dataclasses import dataclass
 from rich.console import Console
 
+import time
+
 console = Console()
+
+def setup_console(no_color: bool):
+    global console
+
+    if no_color:
+        console = Console(color_system = None)
+    else:
+        console = Console()
 
 def display_banner(version: str) -> None:
     banner = ''' _____               ______                _               
@@ -29,15 +39,18 @@ def warn(msg: str) -> None:
 
 def display_scan_results(scan_output: dict) -> None:
     
-    for target in scan_output:
+    scan_info = scan_output['scan_info']
+    scan_res  = scan_output['scan_res']
 
-        target_res = scan_output[target]
+    for target in scan_res:
+
+        target_res = scan_res[target]
 
         console.print(f'''\n[red][Report][/red] ======= {target} =======''')
         
         for result in target_res:
 
-            console.print(f'\t [cyan]{result["http_method"]}[/cyan] {result["attack_name"]}')
+            console.print(f'\t [cyan]{result["http_method"]}[/cyan] {result["attack_name"]} -> [green]{result["response_code"]} [{result["response_time"]*1000:.2f} ms][/green]')
             console.print(f'\t Result: {result["attack_result"]}')
             console.print(f'\t Payload: {result["used_payload"]}')
             console.print(f'\t Allow Origin: {result["allow_origin"]}')
@@ -46,3 +59,8 @@ def display_scan_results(scan_output: dict) -> None:
 
             console.print(f'\t Allow Credentials: [{"green" if acac else "red"}]{acac}[{"/green" if acac else "/red"}]\n')
 
+    info('======= Scan Details =======')
+    good(f'\t- Duration: {scan_info["duration"]:.2f} seconds.')
+    good(f'\t- Total Targets: {scan_info["target_count"]}')
+    good(f'\t- Scan Time: {time.ctime(scan_info["timestamp"])}\n')
+    

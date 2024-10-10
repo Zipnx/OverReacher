@@ -16,7 +16,7 @@ class ScanArguments:
     targets: list
     threads: int        = 8
     output_file: str    = ''
-    output_format: str  = 'txt'
+    #output_format: str  = 'txt'
     http_methods: list  = field(default_factory = lambda: ['GET', 'POST'])
     http_headers: dict  = field(default_factory = lambda: {})
     color_enabled: bool = True
@@ -107,7 +107,7 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
         targets = urls,
         threads = raw_args.threads,
         output_file = raw_args.output,
-        output_format = raw_args.format,
+        #output_format = raw_args.format,
         http_methods = raw_args.methods.split(','), # TODO: Validate methods
         http_headers = {}, # TODO: Parse the headers into dict form
         color_enabled = not raw_args.no_color, # TODO: No color ENV variable
