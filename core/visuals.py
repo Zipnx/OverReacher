@@ -58,7 +58,8 @@ def display_scan_results(scan_output: dict) -> None:
             acac = result['allow_creds']
 
             console.print(f'\t Allow Credentials: [{"green" if acac else "red"}]{acac}[{"/green" if acac else "/red"}]\n')
-
+    
+    console.print()
     info('======= Scan Details =======')
     good(f'\t- Duration: {scan_info["duration"]:.2f} seconds.')
     good(f'\t- Total Targets: {scan_info["target_count"]}')
