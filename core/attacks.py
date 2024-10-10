@@ -1,4 +1,5 @@
 
+from collections.abc import MutableMapping
 from enum import IntEnum
 from typing import List, Tuple, Optional, Self
 from dataclasses import dataclass
@@ -211,7 +212,7 @@ def form_payload(target: Target, exploit: AttackMethod) -> str | None:
     
     return target.to_url()
 
-def execute_attacks(target: Target, method: str, additional_headers: dict = {}) -> List[AttackResult]:
+def execute_attacks(target: Target, method: str, additional_headers: MutableMapping[str, str] = {}) -> List[AttackResult]:
     
     results: List[AttackResult] = []
 
@@ -233,7 +234,7 @@ def execute_attacks(target: Target, method: str, additional_headers: dict = {}) 
     return results
 
 
-def execute_attack(target: Target, method: str, exploit: AttackMethod, additional_headers: dict = {}) -> Optional[AttackResult]:
+def execute_attack(target: Target, method: str, exploit: AttackMethod, additional_headers: MutableMapping[str, str] = {}) -> Optional[AttackResult]:
     
     headers = {**DEFAULT_HEADERS, **additional_headers}
     

@@ -1,4 +1,5 @@
 
+from collections.abc import MutableMapping
 from typing import List
 
 import sys
@@ -18,9 +19,37 @@ class ScanArguments:
     output_file: str    = ''
     #output_format: str  = 'txt'
     http_methods: list  = field(default_factory = lambda: ['GET', 'POST'])
-    http_headers: dict  = field(default_factory = lambda: {})
+    http_headers: MutableMapping[str, str]  = field(default_factory = lambda: {})
     color_enabled: bool = True
     max_rps: int        = 100
+
+def parse_header_args(raw_headers: List[str]) -> MutableMapping[str, str] | None:
+    '''
+    Parse the headers that are passed in the form:
+    ['Host: test', 'User-Agent': 'Something']
+
+    Args:
+        raw_headers (List[str]): List of raw header args
+
+    Returns:
+        MutableMapping[str, str] | None: Resulting header dictionary or None in case of error
+    '''
+
+    headers = {}
+
+    for raw in raw_headers:
+        if ':' not in raw:
+            error('Invalid header supplied!')
+            return
+        
+        key, val = raw.strip().split(':', 1)
+        
+        key = key.replace(' ', '')
+        val = val.replace(' ', '')
+
+        headers[key] = val
+
+    return headers
 
 def parse_arguments() -> Namespace:
     '''
@@ -102,15 +131,25 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
  
     # ==== HANDLE OTHER PARAMS ====
     
+    parsed_headers = parse_header_args(raw_args.header if raw_args.header is not None else [])
+    #print(parsed_headers)
+
+    methods = raw_args.methods.upper().split(',')
+    
+    if not set(methods) < set(['GET', 'POST', 'OPTIONS', 'HEAD', 'PUT', 'DELETE', 'CONNECT', 'PATCH', 'TRACE']):
+        error('Invalid methods selected!')
+        return None
+
+    if parsed_headers is None: return None
 
     return ScanArguments(
         targets = urls,
         threads = raw_args.threads,
         output_file = raw_args.output,
         #output_format = raw_args.format,
-        http_methods = raw_args.methods.split(','), # TODO: Validate methods
-        http_headers = {}, # TODO: Parse the headers into dict form
-        color_enabled = not raw_args.no_color, # TODO: No color ENV variable
+        http_methods = methods,
+        http_headers = parsed_headers,
+        color_enabled = not raw_args.no_color,
         max_rps = raw_args.rate
     )
 

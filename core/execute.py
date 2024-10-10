@@ -16,7 +16,7 @@ class WorkerAssignment:
     target_url: str
     http_method: str
 
-    additional_headers: dict = field(default_factory=dict)
+    additional_headers: MutableMapping[str, str] = field(default_factory=dict)
 
 def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> List[AttackResult]:
     
@@ -71,7 +71,7 @@ def scan(args: ScanArguments) -> dict:
             ))
     
     info(f'Using {args.threads} threads.')
-    info(f'Executing {len(assignments)} attacks for {len(args.targets)} targets.')
+    info(f'Executing {len(assignments)} attacks for {len(args.targets)} targets.\n')
     
     t0 = time.time()
 
