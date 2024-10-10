@@ -161,6 +161,8 @@ EXPLOITS: List[AttackMethod] = [
 class AttackResult:
     target: Target
     method: str
+    elapsed: float
+    status_code: int
     
     payload: str | None
     allow_origin: str
@@ -296,6 +298,8 @@ def execute_attack(target: Target, method: str, exploit: AttackMethod, additiona
     result: AttackResult = AttackResult(
         target = target,
         method = method,
+        elapsed = r.elapsed.total_seconds(),
+        status_code = r.status_code,
         
         payload = payload,
         allow_origin = acao,

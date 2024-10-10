@@ -1,13 +1,16 @@
 
 import core
 from core.arguments import ScanArguments,get_arguments
-from core.visuals import display_banner, display_scan_results, good, error, info
+from core.visuals import setup_console, display_banner, display_scan_results, good, error, info
 
 from core.execute import scan 
-import json
+import json, sys
 
 def main():
-    #'''
+    
+    if '--no-color' in sys.argv:
+        setup_console(True)
+
     display_banner(core.__version__)
 
     args = get_arguments()

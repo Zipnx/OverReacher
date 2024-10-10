@@ -1,7 +1,7 @@
 
-import json
+import json, time
 from core.arguments import ScanArguments
-from core.attacks import AttackMethod, AttackResult, Target, execute_attack, execute_attacks, process_attacks
+from core.attacks import AttackMethod, AttackResult, Target, execute_attacks, process_attacks
 from core.visuals import good,info,error,warn,console
 
 from typing import List, MutableMapping
@@ -10,8 +10,6 @@ from dataclasses import dataclass, field
 from concurrent.futures import ThreadPoolExecutor, Future, as_completed
 
 from rich.progress import Progress, TaskID, BarColumn, TimeRemainingColumn
-
-from time import sleep
 
 @dataclass(init = True)
 class WorkerAssignment:
@@ -74,6 +72,8 @@ def scan(args: ScanArguments) -> dict:
     
     info(f'Using {args.threads} threads.')
     info(f'Executing {len(assignments)} attacks for {len(args.targets)} targets.')
+    
+    t0 = time.time()
 
     # Execute workers
 
@@ -88,7 +88,7 @@ def scan(args: ScanArguments) -> dict:
         console = console,
     ) as prog:
 
-        task = prog.add_task("[cyan]Running attacks...", total = len(assignments))
+        task = prog.add_task("[cyan][*] Running attacks...", total = len(assignments))
 
         with ThreadPoolExecutor(max_workers = args.threads) as executor:
 
@@ -108,16 +108,21 @@ def scan(args: ScanArguments) -> dict:
                 except BaseException as e:
                     error(f'[red]Error:[/red] {e}')
                     #raise e
+    
+    scan_time = time.time() - t0
+    info(f'Done after {scan_time:.2f} seconds.')
 
-    return format_scan_result(results) 
+    return format_scan_result(results, scan_time, len(args.targets)) 
 
 
-def format_scan_result(results: List[AttackResult]) -> dict:
+def format_scan_result(results: List[AttackResult], elapsed: float, target_count: int) -> dict:
     '''
     Take the list of all the scan results and parse them into something more easily readable
 
     Args:
         results (List[AttackResult]): List of AttackResult objects from the scan
+        elapsed (float): Scan duration in seconds
+        target_count (int): Count of targets scanned
 
     Returns:
         dict: JSON Result data
@@ -135,6 +140,8 @@ def format_scan_result(results: List[AttackResult]) -> dict:
 
         result_json = {
             'http_method': res.method,
+            'response_code': res.status_code,
+            'response_time': res.elapsed,
             'attack_name': res.exploit.name,
             'attack_result': res.msg,
             'used_payload': res.payload,
@@ -145,6 +152,15 @@ def format_scan_result(results: List[AttackResult]) -> dict:
         target_results[target_url].append(result_json)
 
     # Cluster the same attack type with different http methods
+    
+    output = {
+        'scan_info': {
+            'duration': elapsed,
+            'target_count': target_count,
+            'timestamp': int(time.time()) 
+        },
+        'scan_res': target_results
+    }
 
-    return target_results
+    return output
 
