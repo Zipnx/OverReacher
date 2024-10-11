@@ -1,5 +1,5 @@
 
-# OverReacher - A Convient CORS Scanner
+# OverReacher - A Convenient CORS Scanner
 
 
 <img src='./screenshot.png' width=80%></img>
