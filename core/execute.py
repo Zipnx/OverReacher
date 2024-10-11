@@ -15,6 +15,7 @@ from rich.progress import Progress, TaskID, BarColumn, TimeRemainingColumn
 class WorkerAssignment:
     target_url: str
     http_method: str
+    time_throttle: float
 
     additional_headers: MutableMapping[str, str] = field(default_factory=dict)
 
@@ -29,7 +30,7 @@ def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> List[A
         error(f'Target {assign.target_url} is not a url?')
         return []
 
-    results = execute_attacks(target, assign.http_method, additional_headers = assign.additional_headers)
+    results = execute_attacks(target, assign.http_method, additional_headers = assign.additional_headers, delay = assign.time_throttle)
 
     progress.advance(task)
 
@@ -56,17 +57,20 @@ def scan(args: ScanArguments) -> dict:
     '''
     Execute the scan given the supplied arguments
     '''
-
+    
     # Setup worker jobs
     
     assignments: List[WorkerAssignment] = []
     attacks: List[AttackMethod] = process_attacks()
+    
+    delays = 1 / (args.max_rps / args.threads * len(attacks))
 
     for target in args.targets:
         for method in args.http_methods:
             assignments.append(WorkerAssignment(
                 target_url = target,
                 http_method = method,
+                time_throttle = delays,
                 additional_headers = args.http_headers
             ))
     

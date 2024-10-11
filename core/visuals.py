@@ -5,13 +5,9 @@ import time
 
 console = Console()
 
-def setup_console(no_color: bool):
+def reload_no_color():
     global console
-
-    if no_color:
-        console = Console(color_system = None)
-    else:
-        console = Console()
+    console = Console(color_system = None)
 
 def display_banner(version: str) -> None:
     banner = ''' _____               ______                _               

@@ -8,7 +8,7 @@ import urllib3
 from urllib.parse import urlparse
 
 from copy import deepcopy
-import requests
+import requests, time
 
 from core.utilities import is_url
 from core.visuals import good,info,warn,error
@@ -178,7 +178,7 @@ IGNORE_LIST: List[Tuple[str, str]] = []
 # Urls in this list will be passed (deemed offline / blocked)
 SKIP_LIST: List[str] = []
 
-# TODO: Make the level and prev settings work as intended
+# TODO: Loading attacks from file, again
 def process_attacks():
     return EXPLOITS
 
@@ -212,12 +212,25 @@ def form_payload(target: Target, exploit: AttackMethod) -> str | None:
     
     return target.to_url()
 
-def execute_attacks(target: Target, method: str, additional_headers: MutableMapping[str, str] = {}) -> List[AttackResult]:
+def execute_attacks(target: Target, method: str, additional_headers: MutableMapping[str, str] = {}, delay: float = 0.) -> List[AttackResult]:
+    '''
+    Execute an attack against a target with all available exploits
+    
+    Args:
+        target (Target): Target to attack
+        method (str): HTTP Method to use
+        additional_headers (dict): Additional headers to send in the requests
+        delay (float): Delay to use between requests in seconds (DEFAULT=0)
+    
+    Returns:
+        List[AttackResult]: Results from the attack
+    '''
     
     results: List[AttackResult] = []
 
     for exploit in EXPLOITS:
         res = execute_attack(target, method, exploit, additional_headers)
+        time.sleep(delay) 
 
         if res is None: continue
     
