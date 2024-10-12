@@ -7,8 +7,6 @@ from os.path import isdir  as isDirectory
 import os
 from urllib.parse import urlparse
 
-from jsonschema import validate
-import jsonschema
 from urllib3.exceptions import URLSchemeUnknown
 
 from .visuals import good,info,warn,error

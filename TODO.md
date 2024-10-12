@@ -4,7 +4,7 @@
 ## Inputs:
 - [x] Input for limiting volume of requests per second
 - [ ] Instead of executing an attack, parse another attack's output JSON
-- [ ] Set a proxy to use
+- [x] Set a proxy to use
 
 ## Functionality:
 - [ ] Make the attacks customizable again, this new system is way more appropriate for it
@@ -13,5 +13,5 @@
 - [x] Forgot the HTTP headers at the arg parsing
 
 ## Bugs:
-- [ ] When a host always returns ACAO null, its labeled as a 3rd Party
+- [x] When a host always returns ACAO null, its labeled as a 3rd Party
 

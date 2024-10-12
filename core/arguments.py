@@ -20,6 +20,7 @@ class ScanArguments:
     #output_format: str  = 'txt'
     http_methods: list  = field(default_factory = lambda: ['GET'])
     http_headers: MutableMapping[str, str]  = field(default_factory = lambda: {})
+    req_proxies: MutableMapping[str, str]   = field(default_factory = lambda: {})
     color_enabled: bool = True
     max_rps: int        = 100
 
@@ -50,6 +51,32 @@ def parse_header_args(raw_headers: List[str]) -> MutableMapping[str, str] | None
         headers[key] = val
 
     return headers
+
+def parse_proxy_args(raw_proxies: List[str]) -> MutableMapping[str, str] | None:
+    '''
+    Parse the proxies that are passed in the form:
+    ['http=socks5://127.0.0.1:9050', 'https=https://someproxy:443']
+    
+    Args:
+        raw_proxies (List[str]): List of raw proxy arguments
+
+    Returns:
+        MutableMapping[str, str] | None: Resulting proxy dictionary or None if an error occurs
+    '''
+
+    proxies = {}
+    
+    # im too lazy to do validation
+
+    for raw in raw_proxies:
+        if '=' not in raw:
+            error('Invalid proxy arg supplied')
+            return None
+
+        proto, proxy = raw.split('=', 1)
+        proxies[proto] = raw
+
+    return proxies
 
 def parse_arguments() -> Namespace:
     '''
@@ -83,6 +110,10 @@ def parse_arguments() -> Namespace:
 
     parser.add_argument('-H', '--header', type = str, action = 'append',
         help = 'Header to be added to requests (can be used multiple times)'
+    )
+    
+    parser.add_argument('-p', '--proxy', type = str, action = 'append',
+        help = 'Proxies to be added to requests (multiple) (FMT: https=socks5://user:pass@host:port)'
     )
 
     parser.add_argument('-t', '--threads', type = int, default = 8,
@@ -134,13 +165,17 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
     parsed_headers = parse_header_args(raw_args.header if raw_args.header is not None else [])
     #print(parsed_headers)
 
+    if parsed_headers is None: return None
+    
     methods = raw_args.methods.upper().split(',')
     
     if not set(methods) < set(['GET', 'POST', 'OPTIONS', 'HEAD', 'PUT', 'DELETE', 'CONNECT', 'PATCH', 'TRACE']):
         error('Invalid methods selected!')
         return None
 
-    if parsed_headers is None: return None
+    parsed_proxies = parse_proxy_args(raw_args.proxy if raw_args.proxy is not None else [])
+    
+    if parsed_proxies is None: return None
 
     return ScanArguments(
         targets = urls,
@@ -149,6 +184,7 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
         #output_format = raw_args.format,
         http_methods = methods,
         http_headers = parsed_headers,
+        req_proxies  = parsed_proxies,
         color_enabled = not raw_args.no_color,
         max_rps = raw_args.rate
     )

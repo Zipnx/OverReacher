@@ -212,7 +212,7 @@ def form_payload(target: Target, exploit: AttackMethod) -> str | None:
     
     return target.to_url()
 
-def execute_attacks(target: Target, method: str, additional_headers: MutableMapping[str, str] = {}, delay: float = 0.) -> List[AttackResult]:
+def execute_attacks(target: Target, method: str, additional_headers: MutableMapping[str, str] = {}, delay: float = 0., proxies: MutableMapping[str, str] = {}) -> List[AttackResult]:
     '''
     Execute an attack against a target with all available exploits
     
@@ -229,7 +229,7 @@ def execute_attacks(target: Target, method: str, additional_headers: MutableMapp
     results: List[AttackResult] = []
 
     for exploit in EXPLOITS:
-        res = execute_attack(target, method, exploit, additional_headers)
+        res = execute_attack(target, method, exploit, additional_headers, proxies)
         time.sleep(delay) 
 
         if res is None: continue
@@ -247,7 +247,7 @@ def execute_attacks(target: Target, method: str, additional_headers: MutableMapp
     return results
 
 
-def execute_attack(target: Target, method: str, exploit: AttackMethod, additional_headers: MutableMapping[str, str] = {}) -> Optional[AttackResult]:
+def execute_attack(target: Target, method: str, exploit: AttackMethod, additional_headers: MutableMapping[str, str] = {}, proxies: MutableMapping[str, str] = {}) -> Optional[AttackResult]:
     
     headers = {**DEFAULT_HEADERS, **additional_headers}
     
@@ -264,12 +264,16 @@ def execute_attack(target: Target, method: str, exploit: AttackMethod, additiona
     
     try:
         r = requests.request(
-            method, target.to_url(), headers = headers, verify = False, timeout = 10
+            method, target.to_url(), headers = headers, proxies = proxies, verify = False, timeout = 10
         )
     except requests.exceptions.TooManyRedirects:
         error(f'Target {target_url} skipped due to redirects')
         
         SKIP_LIST.append(target_url)
+        return
+    
+    except requests.exceptions.ProxyError:
+        error(f'*** PROXY ERROR ***')
         return
 
     except requests.exceptions.Timeout or requests.exceptions.ConnectionError:
@@ -299,6 +303,9 @@ def execute_attack(target: Target, method: str, exploit: AttackMethod, additiona
     if exploit.process is None and acao is not None:
         if acao == '*':
             exploit.success_msg = 'Target has wildcard ACAO'
+        
+        elif acao == 'null':
+            exploit.success_msg = 'Target passively returns a null ACAO'
 
         elif result_root != target.root:
             exploit.success_msg = 'Target has a 3rd Party set as allowed'
