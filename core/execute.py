@@ -17,7 +17,8 @@ class WorkerAssignment:
     http_method: str
     time_throttle: float
 
-    additional_headers: MutableMapping[str, str] = field(default_factory=dict)
+    additional_headers: MutableMapping[str, str]    = field(default_factory=dict)
+    proxies: MutableMapping[str, str]               = field(default_factory=dict)
 
 def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> List[AttackResult]:
     
@@ -30,7 +31,7 @@ def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> List[A
         error(f'Target {assign.target_url} is not a url?')
         return []
 
-    results = execute_attacks(target, assign.http_method, additional_headers = assign.additional_headers, delay = assign.time_throttle)
+    results = execute_attacks(target, assign.http_method, additional_headers = assign.additional_headers, delay = assign.time_throttle, proxies = assign.proxies)
 
     progress.advance(task)
 
@@ -71,7 +72,8 @@ def scan(args: ScanArguments) -> dict:
                 target_url = target,
                 http_method = method,
                 time_throttle = delays,
-                additional_headers = args.http_headers
+                additional_headers = args.http_headers,
+                proxies            = args.req_proxies
             ))
     
     info(f'Using {args.threads} threads.')
