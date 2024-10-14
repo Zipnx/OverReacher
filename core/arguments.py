@@ -8,7 +8,7 @@ from argparse import ArgumentParser, Namespace
 
 from core.utilities import read_urls_file
 
-from .utilities import filter_urls, read_urls_stdin
+from .utilities import filter_urls, read_urls_stdin, is_file
 
 from .visuals import info,good,error,warn
 
@@ -16,6 +16,7 @@ from .visuals import info,good,error,warn
 class ScanArguments:
     targets: list
     threads: int        = 8
+    parse_file: str     = ''
     output_file: str    = ''
     #output_format: str  = 'txt'
     http_methods: list  = field(default_factory = lambda: ['GET'])
@@ -92,6 +93,10 @@ def parse_arguments() -> Namespace:
     parser.add_argument('-u', '--urls',   type = str, help = 'Comma separated list of targets')
     parser.add_argument('-i', '--inputs', type = str, help = 'File with a list of targets')
     
+    parser.add_argument('--parse',  type = str, 
+        help = 'Parse a result file, instead of scanning', default = ''
+    )
+
     parser.add_argument('-o', '--output', type = str, 
         default = '',
         help = 'Path to an output file'
@@ -153,9 +158,13 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
     elif raw_args.inputs is not None:
         urls = read_urls_file(raw_args.inputs)
 
-
-    if len(urls) == 0:
+    
+    if len(urls) == 0 and raw_args.parse is None:
         error('No targets, exitting')
+        return None
+    
+    if len(raw_args.parse) > 0 and not is_file(raw_args.parse):
+        error('Supplied previous scan output does not exist!')
         return None
 
     good(f'Loaded [red]{len(urls)}[/red] targets.')
@@ -181,6 +190,7 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
         targets = urls,
         threads = raw_args.threads,
         output_file = raw_args.output,
+        parse_file  = raw_args.parse,
         #output_format = raw_args.format,
         http_methods = methods,
         http_headers = parsed_headers,
