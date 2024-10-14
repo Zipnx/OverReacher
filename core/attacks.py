@@ -8,7 +8,7 @@ import urllib3
 from urllib.parse import urlparse
 
 from copy import deepcopy
-import requests, time
+import requests, time, json
 
 from core.utilities import is_url
 from core.visuals import good,info,warn,error
@@ -27,6 +27,42 @@ class AttackMethod:
     def set_proc(self, process_json: dict | None) -> Self:
         self.process = process_json
         return self
+    
+    def to_json(self) -> dict:
+        '''
+        Serialize the AttackMethod object to json
+
+        Returns:
+            dict: Serialized JSON
+        '''
+
+        return {
+            'name': self.name,
+            'success_msg': self.success_msg,
+            'is_passive': self.is_passive,
+            'process': self.process
+        }
+
+    @staticmethod
+    def from_json(attack_json: dict) -> Optional['AttackMethod']:
+        '''
+        Get an AttackMethod object from it's serialized json form
+        *** WARNING: No validation is done here
+
+        Args:
+            attack_json (dict): Attack in JSON form
+
+        Returns:
+            AttackMethod | None: The resulting object or None in case of error
+
+        '''    
+
+        return AttackMethod(
+            name = attack_json['name'],
+            success_msg = attack_json['success_msg'],
+            is_passive = attack_json['is_passive'],
+            process = attack_json['process']
+        )
 
 @dataclass(init = True)
 class Target:
@@ -61,102 +97,41 @@ DEFAULT_HEADERS = {
 
 # This defines the attacks, will make it more customizable later on
 # The order of this list indicates in what order the requests will be sent to the target
-EXPLOITS: List[AttackMethod] = [
+EXPLOITS: List[AttackMethod] = []
+ATTACK_FILE = './data/attacks.json'
 
-    # This will do a passive check to see what the host returns
-    AttackMethod(
-        name            = 'Passive Tests',
-        success_msg     = '', # On this, the wild card / third party msg is set during the test
-        is_passive      = True
-    ).set_proc(None),
+def load_attacks() -> List[AttackMethod]:
+    '''
+    Load the attacks from the configured attack file
+    *** Note: Also sets the EXPLOITS global var
 
-    AttackMethod(
-        name            = 'Null origin',
-        success_msg     = 'Target accepts null origin',
-        is_passive = True
-    ).set_proc({
-        'set-null': True
-    }),
+    Returns:
+        List[AttackMethod]: List of attacks
+    '''
+    global EXPLOITS
+
+    with open(ATTACK_FILE, 'r') as f:
+        try:
+            data = json.load(f)
+        except json.JSONDecodeError:
+            error('Attacks JSON invalid contained invalid data!')
+            return []
+
+    attacks: List[AttackMethod] = []
+
+    for raw in data:
+        attack = AttackMethod.from_json(raw)
+
+        if attack is None:
+            error('Invalid attack JSON')
+            continue
+
+        attacks.append(attack)
     
-    AttackMethod(
-        name            = 'Arbitrary data reflection',
-        success_msg     = 'Target reflects on the ACAO header any data sent in the origin header'
-    ).set_proc({
-        'set-origin': 'random_data_lel',
-    }),
+    del EXPLOITS
+    EXPLOITS = attacks
 
-    # Different url test case
-    AttackMethod(
-        name            = 'Arbitrary url reflection',
-        success_msg     = 'Target allows requests from ANY domain',
-
-    ).set_proc({
-        'set-origin-url': 'example.com'
-    }),
-
-    # The post domain wildcard options
-    AttackMethod(
-        name            = 'Post domain wildcard',
-        success_msg     = 'Target allows requests from any domain with it as a prefix',
-    ).set_proc({
-        'append-root': 'example.com'
-    }),
-
-    AttackMethod(
-        name            = 'Post domain wildcard (subdomain)',
-        success_msg     = 'Target allows requests from any domain with it as a subdomain',
-    ).set_proc({
-        'append-root': '.example.com'
-    }),
-
-    AttackMethod(
-        name            = 'Pre domain wildcard',
-        success_msg     = 'Target allows requests from any domain with it as a postfix',
-        is_passive      = True # This is hacky but i want the other tests to be executes as well,
-        #                        as this is not that useful on some case
-    ).set_proc({
-        'preppend-root': 'evil'
-    }),
-
-    #
-    # APPEND BYPASS CHECKS 
-    #
-
-    AttackMethod(
-        name            = 'Underscore append bypass',
-        success_msg     = 'Can bypass checking by appending an underscore (_)',
-    ).set_proc({
-        'append-root': '_.example.com'
-    }),
-
-    AttackMethod(
-        name            = 'Backtick append bypass',
-        success_msg     = 'Can bypass checking by appending a backtick (`)',
-    ).set_proc({
-        'append-root': '%60.example.com'
-    }),
-
-    AttackMethod(
-        name            = 'Backtick append bypass, electric boogaloo',
-        success_msg     = 'Can bypass checking by appending an underscore',
-    ).set_proc({
-        'append-root': '%60example.com'
-    }),
-
-    #
-    # BROKEN REGEX TEST
-    #
-
-    AttackMethod(
-        name            = 'Regex unescaped dot',
-        success_msg     = 'Due to broken regex, the host interpretes a dot as any',
-    ).set_proc({
-        # Here we need to replace a subdomain's dot separator, so it's functionality will be a bit funky
-        'replace-sdomain-sep': 'x'
-    }),
-
-
-]
+    return attacks
 
 @dataclass(init = True)
 class AttackResult:

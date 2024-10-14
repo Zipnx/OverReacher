@@ -1,7 +1,8 @@
 
 import json, time
 from core.arguments import ScanArguments
-from core.attacks import AttackMethod, AttackResult, Target, execute_attacks, process_attacks
+from core.attacks import AttackMethod, AttackResult, Target, execute_attacks, load_attacks
+from core.attacks import EXPLOITS
 from core.visuals import good,info,error,warn,console
 
 from typing import List, MutableMapping
@@ -62,8 +63,15 @@ def scan(args: ScanArguments) -> dict:
     # Setup worker jobs
     
     assignments: List[WorkerAssignment] = []
-    attacks: List[AttackMethod] = process_attacks()
     
+    attacks: List[AttackMethod] = load_attacks()
+    
+    if len(attacks) == 0:
+        error('No attacks loaded')
+        return {}
+
+    good(f'Loaded {len(attacks)} attacks')
+
     delays = 1 / (args.max_rps / args.threads * len(attacks))
 
     for target in args.targets:
