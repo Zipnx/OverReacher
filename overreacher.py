@@ -14,9 +14,23 @@ def main():
     display_banner(core.__version__)
 
     args = get_arguments()
-
+ 
     if args is None:
-        return
+        return   
+    
+    if len(args.parse_file) > 0:
+        info('Parsing previous attack result...\n')
+
+        with open(args.parse_file, 'r') as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                error('Error loading previous attack JSON. Invalid')
+                return
+
+            display_scan_results(data)
+            return
+
 
     results = scan(args)
     

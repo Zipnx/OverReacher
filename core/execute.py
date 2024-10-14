@@ -2,7 +2,6 @@
 import json, time
 from core.arguments import ScanArguments
 from core.attacks import AttackMethod, AttackResult, Target, execute_attacks, load_attacks
-from core.attacks import EXPLOITS
 from core.visuals import good,info,error,warn,console
 
 from typing import List, MutableMapping
