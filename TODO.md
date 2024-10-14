@@ -5,6 +5,7 @@
 - [x] Input for limiting volume of requests per second
 - [x] Instead of executing an attack, parse another attack's output JSON
 - [x] Set a proxy to use
+- [ ] Request Timeout setting
 
 ## Functionality:
 - [x] Make the attacks customizable again, this new system is way more appropriate for it

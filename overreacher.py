@@ -7,7 +7,7 @@ from core.execute import scan
 import json, sys
 
 def main():
-
+    
     if '--no-color' in sys.argv:
         reload_no_color()
 

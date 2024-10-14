@@ -1,0 +1,89 @@
+[
+    {
+        "name": "Passive Tests",
+        "success_msg": "",
+        "is_passive": true,
+        "process": null
+    },
+    {
+        "name": "Null origin",
+        "success_msg": "Target accepts null origin",
+        "is_passive": true,
+        "process": {
+            "set-null": true
+        }
+    },
+    {
+        "name": "Arbitrary data reflection",
+        "success_msg": "Target reflects on the ACAO header any data sent in the origin header",
+        "is_passive": false,
+        "process": {
+            "set-origin": "random_data_lel"
+        }
+    },
+    {
+        "name": "Arbitrary url reflection",
+        "success_msg": "Target allows requests from ANY domain",
+        "is_passive": false,
+        "process": {
+            "set-origin-url": "example.com"
+        }
+    },
+    {
+        "name": "Post domain wildcard",
+        "success_msg": "Target allows requests from any domain with it as a prefix",
+        "is_passive": false,
+        "process": {
+            "append-root": "example.com"
+        }
+    },
+    {
+        "name": "Post domain wildcard (subdomain)",
+        "success_msg": "Target allows requests from any domain with it as a subdomain",
+        "is_passive": false,
+        "process": {
+            "append-root": ".example.com"
+        }
+    },
+    {
+        "name": "Pre domain wildcard",
+        "success_msg": "Target allows requests from any domain with it as a postfix",
+        "is_passive": true,
+        "process": {
+            "preppend-root": "evil"
+        }
+    },
+    {
+        "name": "Underscore append bypass",
+        "success_msg": "Can bypass checking by appending an underscore (_)",
+        "is_passive": false,
+        "process": {
+            "append-root": "_.example.com"
+        }
+    },
+    {
+        "name": "Backtick append bypass",
+        "success_msg": "Can bypass checking by appending a backtick (`)",
+        "is_passive": false,
+        "process": {
+            "append-root": "%60.example.com"
+        }
+    },
+    {
+        "name": "Backtick append bypass, electric boogaloo",
+        "success_msg": "Can bypass checking by appending an underscore",
+        "is_passive": false,
+        "process": {
+            "append-root": "%60example.com"
+        }
+    },
+    {
+        "name": "Regex unescaped dot",
+        "success_msg": "Due to broken regex, the host interpretes a dot as any",
+        "is_passive": false,
+        "process": {
+            "replace-sdomain-sep": "x"
+        }
+    }
+]
+

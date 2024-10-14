@@ -75,7 +75,7 @@ def parse_proxy_args(raw_proxies: List[str]) -> MutableMapping[str, str] | None:
             return None
 
         proto, proxy = raw.split('=', 1)
-        proxies[proto] = raw
+        proxies[proto] = proto
 
     return proxies
 
