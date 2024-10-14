@@ -159,7 +159,7 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
         urls = read_urls_file(raw_args.inputs)
 
     
-    if len(urls) == 0 and raw_args.parse is None:
+    if len(urls) == 0 and not len(raw_args.parse) > 0:
         error('No targets, exitting')
         return None
     
