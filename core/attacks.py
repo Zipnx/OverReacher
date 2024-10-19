@@ -4,6 +4,9 @@ from enum import IntEnum
 from typing import List, Tuple, Optional, Self
 from dataclasses import dataclass
 
+from os.path import realpath
+from pathlib import Path
+
 import urllib3
 from urllib.parse import urlparse
 
@@ -98,7 +101,7 @@ DEFAULT_HEADERS = {
 # This defines the attacks, will make it more customizable later on
 # The order of this list indicates in what order the requests will be sent to the target
 EXPLOITS: List[AttackMethod] = []
-ATTACK_FILE = './data/attacks.json'
+ATTACK_FILE = Path(__file__).parent.parent.resolve() / 'data/attacks.json' 
 
 def load_attacks() -> List[AttackMethod]:
     '''
