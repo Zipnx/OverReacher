@@ -22,6 +22,7 @@ class ScanArguments:
     http_methods: list  = field(default_factory = lambda: ['GET'])
     http_headers: MutableMapping[str, str]  = field(default_factory = lambda: {})
     req_proxies: MutableMapping[str, str]   = field(default_factory = lambda: {})
+    req_timeout: int    = 8
     color_enabled: bool = True
     max_rps: int        = 100
 
@@ -125,6 +126,10 @@ def parse_arguments() -> Namespace:
         help = 'Number of threads to use (DEFAULT=8)'
     )
     
+    parser.add_argument('-T', '--timeout', type = int, default = 8,
+        help = 'Set the timeout limit for the requests'
+    )
+
     parser.add_argument('-r', '--rate',    type = int, default = 100,
         help = 'Rate of max requests per second (DEFAULT=100)'
     )
@@ -195,6 +200,7 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
         http_methods = methods,
         http_headers = parsed_headers,
         req_proxies  = parsed_proxies,
+        req_timeout  = raw_args.timeout,
         color_enabled = not raw_args.no_color,
         max_rps = raw_args.rate
     )

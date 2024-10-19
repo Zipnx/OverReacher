@@ -187,7 +187,7 @@ def form_payload(target: Target, exploit: AttackMethod) -> str | None:
     
     return target.to_url()
 
-def execute_attacks(target: Target, method: str, additional_headers: MutableMapping[str, str] = {}, delay: float = 0., proxies: MutableMapping[str, str] = {}) -> List[AttackResult]:
+def execute_attacks(target: Target, method: str, additional_headers: MutableMapping[str, str] = {}, delay: float = 0., timeout: int = 8, proxies: MutableMapping[str, str] = {}) -> List[AttackResult]:
     '''
     Execute an attack against a target with all available exploits
     
@@ -204,7 +204,7 @@ def execute_attacks(target: Target, method: str, additional_headers: MutableMapp
     results: List[AttackResult] = []
 
     for exploit in EXPLOITS:
-        res = execute_attack(target, method, exploit, additional_headers, proxies)
+        res = execute_attack(target, method, exploit, timeout, additional_headers, proxies)
         time.sleep(delay) 
 
         if res is None: continue
@@ -222,7 +222,7 @@ def execute_attacks(target: Target, method: str, additional_headers: MutableMapp
     return results
 
 
-def execute_attack(target: Target, method: str, exploit: AttackMethod, additional_headers: MutableMapping[str, str] = {}, proxies: MutableMapping[str, str] = {}) -> Optional[AttackResult]:
+def execute_attack(target: Target, method: str, exploit: AttackMethod, timeout: int, additional_headers: MutableMapping[str, str] = {}, proxies: MutableMapping[str, str] = {}) -> Optional[AttackResult]:
     
     headers = {**DEFAULT_HEADERS, **additional_headers}
     
@@ -239,7 +239,7 @@ def execute_attack(target: Target, method: str, exploit: AttackMethod, additiona
     
     try:
         r = requests.request(
-            method, target.to_url(), headers = headers, proxies = proxies, verify = False, timeout = 10
+            method, target.to_url(), headers = headers, proxies = proxies, verify = False, timeout = timeout
         )
     except requests.exceptions.TooManyRedirects:
         error(f'Target {target_url} skipped due to redirects')
