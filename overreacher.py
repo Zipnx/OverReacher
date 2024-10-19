@@ -1,5 +1,7 @@
 
 import core
+
+from core.config import Configuration, load_config
 from core.arguments import ScanArguments,get_arguments
 from core.visuals import reload_no_color, display_banner, display_scan_results, good, error, info
 
@@ -8,12 +10,14 @@ import json, sys
 
 def main():
     
-    if '--no-color' in sys.argv:
+    config = load_config()
+    
+    if '--no-color' in sys.argv or config.default_args.no_color:
         reload_no_color()
 
     display_banner(core.__version__)
-
-    args = get_arguments()
+    
+    args = get_arguments(config)
  
     if args is None:
         return   

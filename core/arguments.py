@@ -6,15 +6,15 @@ import sys
 from dataclasses import dataclass, field
 from argparse import ArgumentParser, Namespace
 
+from core.config import Configuration, ArgumentDefaults
 from core.utilities import read_urls_file
-
-from .utilities import filter_urls, read_urls_stdin, is_file
-
-from .visuals import info,good,error,warn
+from core.utilities import filter_urls, read_urls_stdin, is_file
+from core.visuals import info,good,error,warn
 
 @dataclass(init = True)
 class ScanArguments:
     targets: list
+    attack_file: str
     threads: int        = 8
     parse_file: str     = ''
     output_file: str    = ''
@@ -24,6 +24,7 @@ class ScanArguments:
     req_proxies: MutableMapping[str, str]   = field(default_factory = lambda: {})
     req_timeout: int    = 8
     color_enabled: bool = True
+    ignore_acac: bool   = False
     max_rps: int        = 100
 
 def parse_header_args(raw_headers: List[str]) -> MutableMapping[str, str] | None:
@@ -80,7 +81,7 @@ def parse_proxy_args(raw_proxies: List[str]) -> MutableMapping[str, str] | None:
 
     return proxies
 
-def parse_arguments() -> Namespace:
+def parse_arguments(default_arguments: ArgumentDefaults) -> Namespace:
     '''
     Use argparse to get the parameters from argv 
     * Does no checks
@@ -99,7 +100,7 @@ def parse_arguments() -> Namespace:
     )
 
     parser.add_argument('-o', '--output', type = str, 
-        default = '',
+        default = default_arguments.output_file,
         help = 'Path to an output file'
     )
     
@@ -110,8 +111,8 @@ def parse_arguments() -> Namespace:
     #    help = 'Save format (DEFAULT=txt)'
     #)
     
-    parser.add_argument('-m', '--methods', type = str, default = 'GET',
-        help = 'Comma seperated http methods to use (DEFAULT=GET)'
+    parser.add_argument('-m', '--methods', type = str, default = default_arguments.http_methods,
+        help = f'Comma seperated http methods to use (DEFAULT={default_arguments.http_methods})'
     )
 
     parser.add_argument('-H', '--header', type = str, action = 'append',
@@ -122,27 +123,31 @@ def parse_arguments() -> Namespace:
         help = 'Proxies to be added to requests (multiple) (FMT: https=socks5://user:pass@host:port)'
     )
 
-    parser.add_argument('-t', '--threads', type = int, default = 8,
-        help = 'Number of threads to use (DEFAULT=8)'
+    parser.add_argument('-t', '--threads', type = int, default = default_arguments.threads,
+        help = f'Number of threads to use (DEFAULT={default_arguments.threads})'
     )
     
-    parser.add_argument('-T', '--timeout', type = int, default = 8,
-        help = 'Set the timeout limit for the requests'
+    parser.add_argument('-T', '--timeout', type = int, default = default_arguments.req_timeout,
+        help = f'Set the timeout limit for the requests (DEFAULT={default_arguments.req_timeout})'
     )
 
-    parser.add_argument('-r', '--rate',    type = int, default = 100,
-        help = 'Rate of max requests per second (DEFAULT=100)'
+    parser.add_argument('-r', '--rate',    type = int, default = default_arguments.rate_limit,
+        help = f'Rate of max requests per second (DEFAULT={default_arguments.rate_limit})'
     )
 
     parser.add_argument('--no-color',      action = 'store_true',
         help = 'Disable color (the NO_COLOR env variable works too)'
     )
 
+    parser.add_argument('-A', '--ignore-acac', action = 'store_true',
+        help = 'Enable tracking of where ACAC is set to false'
+    )
+
     args = parser.parse_args()
 
     return args
 
-def format_arguments(raw_args: Namespace) -> ScanArguments | None:
+def format_arguments(raw_args: Namespace, config: Configuration) -> ScanArguments | None:
     '''
     Format the arguments read from argparse into the proper format
     
@@ -193,6 +198,7 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
 
     return ScanArguments(
         targets = urls,
+        attack_file = config.default_args.attacks_file,
         threads = raw_args.threads,
         output_file = raw_args.output,
         parse_file  = raw_args.parse,
@@ -201,11 +207,12 @@ def format_arguments(raw_args: Namespace) -> ScanArguments | None:
         http_headers = parsed_headers,
         req_proxies  = parsed_proxies,
         req_timeout  = raw_args.timeout,
-        color_enabled = not raw_args.no_color,
+        color_enabled = not (raw_args.no_color or config.default_args.no_color),
+        ignore_acac   = (raw_args.ignore_acac or config.default_args.ignore_acac), 
         max_rps = raw_args.rate
     )
 
-def get_arguments() -> ScanArguments | None:
+def get_arguments(config: Configuration) -> ScanArguments | None:
     '''
     Get, verify and format the commandline arguments into the ScanArguments dataclass
 
@@ -213,6 +220,6 @@ def get_arguments() -> ScanArguments | None:
         ScanArguments | None: Parsed args or none, if an error occurs
     '''
 
-    args = parse_arguments()
+    args = parse_arguments(config.default_args)
 
-    return format_arguments(args)
+    return format_arguments(args, config)

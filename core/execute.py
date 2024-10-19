@@ -17,6 +17,7 @@ class WorkerAssignment:
     http_method: str
     time_throttle: float
     timeout: int
+    ignore_acac: bool
 
     additional_headers: MutableMapping[str, str]    = field(default_factory=dict)
     proxies: MutableMapping[str, str]               = field(default_factory=dict)
@@ -32,7 +33,15 @@ def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> List[A
         error(f'Target {assign.target_url} is not a url?')
         return []
 
-    results = execute_attacks(target, assign.http_method, additional_headers = assign.additional_headers, delay = assign.time_throttle, timeout = assign.timeout, proxies = assign.proxies)
+    results = execute_attacks(
+        target, 
+        assign.http_method, 
+        additional_headers = assign.additional_headers, 
+        delay = assign.time_throttle, 
+        timeout = assign.timeout, 
+        proxies = assign.proxies,
+        ignore_acac = assign.ignore_acac,
+    )
 
     progress.advance(task)
 
@@ -64,7 +73,7 @@ def scan(args: ScanArguments) -> dict:
     
     assignments: List[WorkerAssignment] = []
     
-    attacks: List[AttackMethod] = load_attacks()
+    attacks: List[AttackMethod] = load_attacks(args.attack_file)
     
     if len(attacks) == 0:
         error('No attacks loaded')
@@ -77,12 +86,13 @@ def scan(args: ScanArguments) -> dict:
     for target in args.targets:
         for method in args.http_methods:
             assignments.append(WorkerAssignment(
-                target_url = target,
-                http_method = method,
-                time_throttle = delays,
-                timeout = args.req_timeout,
-                additional_headers = args.http_headers,
-                proxies            = args.req_proxies
+                target_url          = target,
+                http_method         = method,
+                time_throttle       = delays,
+                timeout             = args.req_timeout,
+                additional_headers  = args.http_headers,
+                proxies             = args.req_proxies,
+                ignore_acac         = args.ignore_acac,
             ))
     
     info(f'Using {args.threads} threads.')

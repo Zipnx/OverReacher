@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 from copy import deepcopy
 import requests, time, json
 
-from core.utilities import is_url
+from core.utilities import is_file, is_url
 from core.visuals import good,info,warn,error
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -101,9 +101,9 @@ DEFAULT_HEADERS = {
 # This defines the attacks, will make it more customizable later on
 # The order of this list indicates in what order the requests will be sent to the target
 EXPLOITS: List[AttackMethod] = []
-ATTACK_FILE = Path(__file__).parent.parent.resolve() / 'data/attacks.json' 
+#ATTACK_FILE = Path(__file__).parent.parent.resolve() / 'data/attacks.json' 
 
-def load_attacks() -> List[AttackMethod]:
+def load_attacks(attack_file) -> List[AttackMethod]:
     '''
     Load the attacks from the configured attack file
     *** Note: Also sets the EXPLOITS global var
@@ -112,8 +112,14 @@ def load_attacks() -> List[AttackMethod]:
         List[AttackMethod]: List of attacks
     '''
     global EXPLOITS
+    
+    attack_file = Path(__file__).parent.parent.resolve() / attack_file
 
-    with open(ATTACK_FILE, 'r') as f:
+    if not is_file(attack_file):
+        error(f'Input attack file "{attack_file}" does not exist!')
+        return []
+
+    with open(attack_file, 'r') as f:
         try:
             data = json.load(f)
         except json.JSONDecodeError:
@@ -170,6 +176,12 @@ def form_payload(target: Target, exploit: AttackMethod) -> str | None:
         if option == 'set-origin':
             # This forces a return
             return proc[option]
+        
+        if option == 'preppend-origin':
+            return proc[option] + target.to_url()
+
+        if option == 'append-origin':
+            return target.to_url() + proc[option]
 
         elif option == 'set-origin-url': 
             target.root = proc[option]
@@ -190,7 +202,15 @@ def form_payload(target: Target, exploit: AttackMethod) -> str | None:
     
     return target.to_url()
 
-def execute_attacks(target: Target, method: str, additional_headers: MutableMapping[str, str] = {}, delay: float = 0., timeout: int = 8, proxies: MutableMapping[str, str] = {}) -> List[AttackResult]:
+def execute_attacks(
+        target: Target, 
+        method: str, 
+        additional_headers: MutableMapping[str, str] = {}, 
+        delay: float = 0., 
+        timeout: int = 8, 
+        proxies: MutableMapping[str, str] = {},
+        ignore_acac: bool = False
+    ) -> List[AttackResult]:
     '''
     Execute an attack against a target with all available exploits
     
@@ -207,7 +227,7 @@ def execute_attacks(target: Target, method: str, additional_headers: MutableMapp
     results: List[AttackResult] = []
 
     for exploit in EXPLOITS:
-        res = execute_attack(target, method, exploit, timeout, additional_headers, proxies)
+        res = execute_attack(target, method, exploit, timeout, additional_headers, proxies, ignore_acac = ignore_acac)
         time.sleep(delay) 
 
         if res is None: continue
@@ -225,7 +245,15 @@ def execute_attacks(target: Target, method: str, additional_headers: MutableMapp
     return results
 
 
-def execute_attack(target: Target, method: str, exploit: AttackMethod, timeout: int, additional_headers: MutableMapping[str, str] = {}, proxies: MutableMapping[str, str] = {}) -> Optional[AttackResult]:
+def execute_attack(
+        target: Target, 
+        method: str, 
+        exploit: AttackMethod, 
+        timeout: int, 
+        additional_headers: MutableMapping[str, str] = {}, 
+        proxies: MutableMapping[str, str] = {},
+        ignore_acac: bool = False
+    ) -> Optional[AttackResult]:
     
     headers = {**DEFAULT_HEADERS, **additional_headers}
     
@@ -275,7 +303,9 @@ def execute_attack(target: Target, method: str, exploit: AttackMethod, timeout: 
         acac = False
     else:
         acac = 'true' in str(acac).lower()
-     
+    
+    if not acac and not ignore_acac: return
+
     result_root = urlparse(acao).netloc
 
     if exploit.process is None and acao is not None:
