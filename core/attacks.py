@@ -10,7 +10,7 @@ from pathlib import Path
 import urllib3
 from urllib.parse import urlparse
 
-from copy import deepcopy
+from copy import copy, deepcopy
 import requests, time, json
 
 from core.utilities import is_file, is_url
@@ -89,19 +89,28 @@ class Target:
         return f'{self._scheme}://{self.root}{self._path if len(self._path) > 0 else ""}'
 
 
-DEFAULT_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'en-US,en;q=0.5',
-    'Accept-Encoding': 'gzip',
-    'DNT': '1',
-    'Connection': 'close',
-}
+#DEFAULT_HEADERS = {
+#    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.',
+#    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+#    'Accept-Language': 'en-US,en;q=0.5',
+#    'Accept-Encoding': 'gzip',
+#    'DNT': '1',
+#    'Connection': 'close',
+#}
 
-# This defines the attacks, will make it more customizable later on
-# The order of this list indicates in what order the requests will be sent to the target
+DEFAULT_HEADERS = {}
+PROXIES = {}
+
+def set_headers(headers: dict):
+    global DEFAULT_HEADERS
+    DEFAULT_HEADERS = headers
+
+
+def set_proxies(proxies: dict):
+    global PROXIES
+    PROXIES = proxies
+
 EXPLOITS: List[AttackMethod] = []
-#ATTACK_FILE = Path(__file__).parent.parent.resolve() / 'data/attacks.json' 
 
 def load_attacks(attack_file) -> List[AttackMethod]:
     '''
@@ -168,7 +177,7 @@ def process_attacks():
 
 def form_payload(target: Target, exploit: AttackMethod) -> str | None:
     
-    if exploit.process is None: return
+    if exploit.process is None: return None
     proc = exploit.process
 
     for option in proc:
@@ -205,10 +214,8 @@ def form_payload(target: Target, exploit: AttackMethod) -> str | None:
 def execute_attacks(
         target: Target, 
         method: str, 
-        additional_headers: MutableMapping[str, str] = {}, 
         delay: float = 0., 
         timeout: int = 8, 
-        proxies: MutableMapping[str, str] = {},
         ignore_acac: bool = False
     ) -> List[AttackResult]:
     '''
@@ -227,7 +234,7 @@ def execute_attacks(
     results: List[AttackResult] = []
 
     for exploit in EXPLOITS:
-        res = execute_attack(target, method, exploit, timeout, additional_headers, proxies, ignore_acac = ignore_acac)
+        res = execute_attack(target, method, exploit, timeout, ignore_acac = ignore_acac)
         time.sleep(delay) 
 
         if res is None: continue
@@ -250,12 +257,8 @@ def execute_attack(
         method: str, 
         exploit: AttackMethod, 
         timeout: int, 
-        additional_headers: MutableMapping[str, str] = {}, 
-        proxies: MutableMapping[str, str] = {},
         ignore_acac: bool = False
     ) -> Optional[AttackResult]:
-    
-    headers = {**DEFAULT_HEADERS, **additional_headers}
     
     target_url = target.to_url()
 
@@ -265,32 +268,34 @@ def execute_attack(
     
     payload = form_payload(deepcopy(target), exploit)
     
+    headers = copy(DEFAULT_HEADERS)
+
     if payload is not None:
         headers['Origin'] = payload 
-    
+
     try:
         r = requests.request(
-            method, target.to_url(), headers = headers, proxies = proxies, verify = False, timeout = timeout
+            method, target.to_url(), headers = headers, proxies = PROXIES, verify = False, timeout = timeout
         )
     except requests.exceptions.TooManyRedirects:
         error(f'Target {target_url} skipped due to redirects')
         
         SKIP_LIST.append(target_url)
-        return
+        return None
     
     except requests.exceptions.ProxyError:
         error(f'*** PROXY ERROR ***')
-        return
+        return None
 
     except requests.exceptions.Timeout or requests.exceptions.ConnectionError:
         error(f'Connection error to {target_url}')
         SKIP_LIST.append(target_url)
-        return
+        return None
 
     except requests.exceptions.RequestException as e:
         #error(f'Error while attacking {target_url}: {str(e)}')
         SKIP_LIST.append(target_url)
-        return
+        return None
     
     if target_url in SKIP_LIST or (target_url, method) in IGNORE_LIST: return None
 
@@ -304,7 +309,7 @@ def execute_attack(
     else:
         acac = 'true' in str(acac).lower()
     
-    if not acac and not ignore_acac: return
+    if not acac and not ignore_acac: return None
 
     result_root = urlparse(acao).netloc
 
@@ -322,7 +327,7 @@ def execute_attack(
     vulnerable &= ( (acao == payload) or payload is None )
 
     if not vulnerable:
-        return
+        return None
 
     result: AttackResult = AttackResult(
         target = target,

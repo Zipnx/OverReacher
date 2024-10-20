@@ -12,6 +12,8 @@ def main():
     
     config = load_config()
     
+    #print(config.default_headers)
+
     if '--no-color' in sys.argv or config.default_args.no_color:
         reload_no_color()
 
@@ -36,7 +38,7 @@ def main():
             return
 
 
-    results = scan(args)
+    results = scan(config, args)
     
     if len(results) == 0: return
 

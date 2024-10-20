@@ -1,4 +1,5 @@
 
+from collections.abc import Mapping, MutableMapping
 from dataclasses import dataclass
 from pathlib import Path
 import configparser
@@ -17,9 +18,35 @@ class ArgumentDefaults:
 @dataclass(frozen = True)
 class Configuration:
     default_args: ArgumentDefaults
+    default_headers: Mapping
+    used_proxies: Mapping
+
+def dict_from_section(config: configparser.ConfigParser, section_name: str) -> Mapping[str, str]:
+    '''
+    Get a dict from a config section. Used for the default headers and also proxies
+    Will return an empty dict if the section does not exist
+    WARNING: All the values are assumed to be strings!
+
+    Args:
+        config (ConfigParser): Parser object
+        section_name (str): Section name to use
+
+    Returns:
+        Mapping[str, str]: Resulting dict
+    '''
+
+    if not config.has_section(section_name): return {}
+
+    result = {}
+
+    for key in config[section_name].keys():
+        result[key] = config.get(section_name, key)
+        
+    return result
 
 def load_config() -> Configuration:
     config = configparser.ConfigParser()
+    config.optionxform = str # Bit hacky but ¯\_(ツ)_/¯
     config.read(Path(__file__).parent.parent.resolve() / 'data/config.ini')
 
     default_settings = ArgumentDefaults(
@@ -33,5 +60,10 @@ def load_config() -> Configuration:
         ignore_acac = config.getboolean('DEFAULTS', 'ignore_acac', fallback = False),
     )
 
-    return Configuration(default_args = default_settings)
+    return Configuration(
+        default_args = default_settings,
+        default_headers = dict_from_section(config, 'DEFAULT_HEADERS'),
+        used_proxies = dict_from_section(config, 'PROXIES'),
+    )
+
 

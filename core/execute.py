@@ -1,6 +1,9 @@
 
 import json, time
+from core.config import Configuration
 from core.arguments import ScanArguments
+
+from core.attacks import set_headers, set_proxies
 from core.attacks import AttackMethod, AttackResult, Target, execute_attacks, load_attacks
 from core.visuals import good,info,error,warn,console
 
@@ -19,9 +22,6 @@ class WorkerAssignment:
     timeout: int
     ignore_acac: bool
 
-    additional_headers: MutableMapping[str, str]    = field(default_factory=dict)
-    proxies: MutableMapping[str, str]               = field(default_factory=dict)
-
 def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> List[AttackResult]:
     
     # The from_url should theoretically never error since the url validity is check before in
@@ -36,10 +36,8 @@ def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> List[A
     results = execute_attacks(
         target, 
         assign.http_method, 
-        additional_headers = assign.additional_headers, 
         delay = assign.time_throttle, 
         timeout = assign.timeout, 
-        proxies = assign.proxies,
         ignore_acac = assign.ignore_acac,
     )
 
@@ -64,11 +62,14 @@ def worker(assign: WorkerAssignment, progress: Progress, task: TaskID) -> List[A
     return results
 
 
-def scan(args: ScanArguments) -> dict:
+def scan(config: Configuration, args: ScanArguments) -> dict:
     '''
     Execute the scan given the supplied arguments
     '''
     
+    set_headers({**config.default_headers, **args.http_headers})
+    set_proxies({**config.used_proxies, **args.req_proxies})
+
     # Setup worker jobs
     
     assignments: List[WorkerAssignment] = []
@@ -90,8 +91,6 @@ def scan(args: ScanArguments) -> dict:
                 http_method         = method,
                 time_throttle       = delays,
                 timeout             = args.req_timeout,
-                additional_headers  = args.http_headers,
-                proxies             = args.req_proxies,
                 ignore_acac         = args.ignore_acac,
             ))
     

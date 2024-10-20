@@ -44,7 +44,7 @@ def parse_header_args(raw_headers: List[str]) -> MutableMapping[str, str] | None
     for raw in raw_headers:
         if ':' not in raw:
             error('Invalid header supplied!')
-            return
+            return None
         
         key, val = raw.strip().split(':', 1)
         
