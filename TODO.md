@@ -1,18 +1,15 @@
 
 # TODO: 
 
-## Inputs:
-- [x] Request Timeout setting
-- [x] Ignore where ACAC is false and add option to track it
+## General:
+- [ ] Include the data directory on the final package
+- [ ] Make the config files easily modifiable
+- [ ] Make a script to install without pulling the package
 
 ## Functionality:
-- [x] Make the attacks customizable again, this new system is way more appropriate for it
-- [x] A config file in the proj directory that sets default options
-- [x] Proxies & Headers on the config file
 - [ ] Maybe an option to keep track of the last scan results (in config)
 - [ ] Also add in the attacks a way to customize based on the result
 - [ ] Could bring back the progress bar increasing per request, but need to account for skipped requests
 
 ## Bugs:
-- [x] Attacks should be loaded from the base path of the script
 

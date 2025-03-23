@@ -13,8 +13,8 @@ from urllib.parse import urlparse
 from copy import copy, deepcopy
 import requests, time, json
 
-from core.utilities import is_file, is_url
-from core.visuals import good,info,warn,error
+from .utilities import is_file, is_url
+from .visuals import good,info,warn,error
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

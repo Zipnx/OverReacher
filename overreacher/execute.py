@@ -1,11 +1,11 @@
 
 import json, time
-from core.config import Configuration
-from core.arguments import ScanArguments
+from .config import Configuration
+from .arguments import ScanArguments
 
-from core.attacks import set_headers, set_proxies
-from core.attacks import AttackMethod, AttackResult, Target, execute_attacks, load_attacks
-from core.visuals import good,info,error,warn,console
+from .attacks import set_headers, set_proxies
+from .attacks import AttackMethod, AttackResult, Target, execute_attacks, load_attacks
+from .visuals import good,info,error,warn,console
 
 from typing import List, MutableMapping
 from dataclasses import dataclass, field

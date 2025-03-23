@@ -6,10 +6,10 @@ import sys
 from dataclasses import dataclass, field
 from argparse import ArgumentParser, Namespace
 
-from core.config import Configuration, ArgumentDefaults
-from core.utilities import read_urls_file
-from core.utilities import filter_urls, read_urls_stdin, is_file
-from core.visuals import info,good,error,warn
+from .config import Configuration, ArgumentDefaults
+from .utilities import read_urls_file
+from .utilities import filter_urls, read_urls_stdin, is_file
+from .visuals import info,good,error,warn
 
 @dataclass(init = True)
 class ScanArguments:

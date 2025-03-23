@@ -1,8 +1,16 @@
 
 __pycache__/
 
+/build
+/dist
 /venv
 /.git
 /.mypy_cache
 
+*.egg
+*.eggs
+*.egg-info/
+*.pyc
+
 /*.json
+
