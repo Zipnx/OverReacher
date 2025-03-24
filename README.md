@@ -12,21 +12,21 @@ Made this tool based on functionality from [Corsy](https://github.com/s0md3v/Cor
 
 ## Getting Started
 
-First install the requirements by running
+### Pipx install
 
-`
-pip install -r requirements.txt
-`
-
-Then you can view the run options with
-
+OverReacher can be easily installed using:
 ```
-python3 overreacher.py -h
-
-or 
-
-python3 overreacher.py --help
+pipx install overreacher
 ```
+
+Afterwards you can check the usage with:
+```
+overreacher.py -h
+```
+
+### Manual install
+
+TODO: Manual install, gtg
 
 ## Usage
 

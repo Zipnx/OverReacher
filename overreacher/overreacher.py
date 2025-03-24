@@ -11,6 +11,10 @@ def main():
     
     config = load_config()
     
+    if config is None:
+        error("Error loading configuration!")
+        return
+
     #print(config.default_headers)
 
     if '--no-color' in sys.argv or config.default_args.no_color:

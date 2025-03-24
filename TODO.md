@@ -2,9 +2,10 @@
 # TODO: 
 
 ## General:
-- [ ] Include the data directory on the final package
-- [ ] Make the config files easily modifiable
+- [X] Include the data directory on the final package
+- [ ] Make the config files easily modifiable (init in another directory)
 - [ ] Make a script to install without pulling the package
+- [ ] Fix the module script in setup.py
 
 ## Functionality:
 - [ ] Maybe an option to keep track of the last scan results (in config)

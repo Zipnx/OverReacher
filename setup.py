@@ -28,9 +28,18 @@ setup(
     author_email= 'zipnx@protonmail.com',
     url         = 'https://github.com/Zipnx/OverReacher',
     scripts     = ['./overreacher/overreacher.py'],
-    packages    = ['overreacher'],
+    packages    = ['overreacher', 'overreacher.data'],
     license     = 'MIT',
+    entry_points= {
+        'console_scripts':[
+            'overreacher = overreacher:main'
+        ]
+    },
+    
+    package_dir = {'': './'},
+    package_data= {'overreacher': ['*.ini'], 'overreacher.data': ['*.ini', '*.json']},
 
+    include_package_data = True,
     long_description = desc,
     long_description_content_type = 'text/markdown',
 

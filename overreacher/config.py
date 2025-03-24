@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 import configparser
 
+from .visuals import error
+
 @dataclass(frozen = True)
 class ArgumentDefaults:
     attacks_file: str
@@ -44,10 +46,30 @@ def dict_from_section(config: configparser.ConfigParser, section_name: str) -> M
         
     return result
 
-def load_config() -> Configuration:
+def load_config() -> Configuration | None:
+    setup_filepath = Path(__file__).parent.resolve() / 'setup.ini'
+
+    # Get the data directory path
+    setup = configparser.ConfigParser()
+    setup.optionxform = str
+    res = setup.read(setup_filepath)
+    
+    if len(res) == 0:
+        error(f'Setup file not found: "{setup_filepath}"')
+        return None
+
+    data_directory = Path(__file__).parent.resolve() / setup.get('SETUP', 'data_directory', fallback = './data/')
+
     config = configparser.ConfigParser()
     config.optionxform = str # Bit hacky but ¯\_(ツ)_/¯
-    config.read(Path(__file__).parent.parent.resolve() / 'data/config.ini')
+    res = config.read(data_directory / 'config.ini')
+
+    if len(res) == 0:
+        error(f'Config file not found: "{data_directory / "config.ini"}"')
+        return None
+
+    #print(Path(__file__).parent.resolve() / 'setup.ini')
+    #print(Path(__file__).parent.resolve() / data_directory / 'config.ini')
 
     default_settings = ArgumentDefaults(
         attacks_file = config.get('DEFAULTS', 'attacks_file', fallback = 'data/attacks.json'),
