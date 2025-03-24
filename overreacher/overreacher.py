@@ -1,5 +1,5 @@
 
-from . import __version__
+from .version import __version__
 from .config import Configuration, load_config, setup_config_dir, default_config_dir
 from .arguments import ScanArguments,get_arguments
 from .visuals import reload_no_color, display_banner, display_scan_results, good, error, info

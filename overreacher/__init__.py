@@ -1,2 +1,5 @@
 
-__version__ = '1.0-beta'
+from .overreacher import main
+from .version import __version__
+
+__all__ = ["__version__", "main"]

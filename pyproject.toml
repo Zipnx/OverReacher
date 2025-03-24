@@ -1,0 +1,50 @@
+
+[project]
+name = "OverReacher"
+version = "1.0.0"
+description = "A scanner for CORS misconfiguration vulnerabilities"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.8"
+license = "MIT"
+authors = [
+    {name = "Zipnx", email = "zipnx@protonmail.com"},
+]
+classifiers = [
+    "Programming Language :: Python",
+]
+dependencies = [
+    "requests",
+    "rich",
+    "urllib3"
+]
+
+[project.optional-dependencies]
+dev = [
+    "twine",
+    "setuptools",
+    "build"
+]
+
+[project.scripts]
+overreacher = "overreacher:main"
+
+[project.urls]
+homepage = "https://github.com/Zipnx/OverReacher"
+repository = "https://github.com/Zipnx/OverReacher"
+
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=64"]
+
+[tool.setuptools_scm]
+write_to = "overreacher/version.py"
+
+[tool.setuptools]
+packages = [
+    "overreacher", "overreacher.data"
+]
+
+[tool.setuptools.package-data]
+overreacher = [
+    "data/*"
+]
