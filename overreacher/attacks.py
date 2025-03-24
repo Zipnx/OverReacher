@@ -121,8 +121,6 @@ def load_attacks(attack_file) -> List[AttackMethod]:
         List[AttackMethod]: List of attacks
     '''
     global EXPLOITS
-    
-    attack_file = Path(__file__).parent.parent.resolve() / attack_file
 
     if not is_file(attack_file):
         error(f'Input attack file "{attack_file}" does not exist!')

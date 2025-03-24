@@ -8,7 +8,7 @@ from .visuals import error
 
 @dataclass(frozen = True)
 class ArgumentDefaults:
-    attacks_file: str
+    attacks_file: Path
     threads: int
     output_file: str
     http_methods: str
@@ -19,6 +19,7 @@ class ArgumentDefaults:
 
 @dataclass(frozen = True)
 class Configuration:
+    data_directory: Path
     default_args: ArgumentDefaults
     default_headers: Mapping
     used_proxies: Mapping
@@ -70,9 +71,11 @@ def load_config() -> Configuration | None:
 
     #print(Path(__file__).parent.resolve() / 'setup.ini')
     #print(Path(__file__).parent.resolve() / data_directory / 'config.ini')
+    
+    attacks_relpath = config.get('DEFAULTS', 'attacks_file', fallback = './attacks.json')
 
     default_settings = ArgumentDefaults(
-        attacks_file = config.get('DEFAULTS', 'attacks_file', fallback = 'data/attacks.json'),
+        attacks_file = data_directory / attacks_relpath,
         threads = config.getint('DEFAULTS', 'threads', fallback = 8),
         output_file = config.get('DEFAULTS', 'output_file', fallback = ''),
         http_methods = config.get('DEFAULTS', 'http_methods', fallback = 'GET'),
@@ -83,6 +86,7 @@ def load_config() -> Configuration | None:
     )
 
     return Configuration(
+        data_directory = data_directory,
         default_args = default_settings,
         default_headers = dict_from_section(config, 'DEFAULT_HEADERS'),
         used_proxies = dict_from_section(config, 'PROXIES'),
