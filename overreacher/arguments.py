@@ -3,6 +3,7 @@ from collections.abc import MutableMapping
 from typing import List
 
 import sys
+from pathlib import Path
 from dataclasses import dataclass, field
 from argparse import ArgumentParser, Namespace
 
@@ -14,7 +15,7 @@ from .visuals import info,good,error,warn
 @dataclass(init = True)
 class ScanArguments:
     targets: list
-    attack_file: str
+    attack_file: Path
     threads: int        = 8
     parse_file: str     = ''
     output_file: str    = ''
@@ -24,6 +25,8 @@ class ScanArguments:
     req_proxies: MutableMapping[str, str]   = field(default_factory = lambda: {})
     req_timeout: int    = 8
     color_enabled: bool = True
+    make_config: bool   = False
+    reset_config: bool  = False
     ignore_acac: bool   = False
     max_rps: int        = 100
 
@@ -138,6 +141,14 @@ def parse_arguments(default_arguments: ArgumentDefaults) -> Namespace:
     parser.add_argument('--no-color',      action = 'store_true',
         help = 'Disable color (the NO_COLOR env variable works too)'
     )
+    
+    parser.add_argument('--make-config', action = 'store_true',
+        help = 'Make a .overreacher config directory here. If it already exists, the tool will use the existing one from now on'
+    )
+
+    parser.add_argument('--reset-config', action = 'store_true',
+        help = 'Reset to the default configuration directory'
+    )
 
     parser.add_argument('-A', '--ignore-acac', action = 'store_true',
         help = 'Enable tracking of where ACAC is set to false'
@@ -208,6 +219,8 @@ def format_arguments(raw_args: Namespace, config: Configuration) -> ScanArgument
         req_proxies  = parsed_proxies,
         req_timeout  = raw_args.timeout,
         color_enabled = not (raw_args.no_color or config.default_args.no_color),
+        make_config  = raw_args.make_config,
+        reset_config = raw_args.reset_config,
         ignore_acac   = (raw_args.ignore_acac or config.default_args.ignore_acac), 
         max_rps = raw_args.rate
     )

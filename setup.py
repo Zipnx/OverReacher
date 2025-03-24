@@ -18,13 +18,13 @@ with open('README.md', 'r') as f:
 
 # TODOS:
 # [ ] Check compatibility for python versions
-# [ ] Data folder, also want it to be easily editable
 
 setup(
     name        = 'OverReacher',
     version     = '1.0.0',
     description = 'A scanner for CORS misconfiguration vulnerabilities',
     author      = 'Zipnx',
+    maintainer  = 'Zipnx',
     author_email= 'zipnx@protonmail.com',
     url         = 'https://github.com/Zipnx/OverReacher',
     scripts     = ['./overreacher/overreacher.py'],

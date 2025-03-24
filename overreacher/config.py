@@ -4,7 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 import configparser
 
-from .visuals import error
+from .visuals import error, good, info
+
+from shutil import copy as copy_file
+from os import copy_file_range, makedirs
+from os.path import isdir as is_directory
+from os.path import exists as file_exists
 
 @dataclass(frozen = True)
 class ArgumentDefaults:
@@ -47,8 +52,12 @@ def dict_from_section(config: configparser.ConfigParser, section_name: str) -> M
         
     return result
 
-def load_config() -> Configuration | None:
+def get_data_directory() -> Path | None:
     setup_filepath = Path(__file__).parent.resolve() / 'setup.ini'
+
+    # Make the setup.ini file if the tool is run for the first time
+    if not file_exists(setup_filepath):
+        default_config_dir()
 
     # Get the data directory path
     setup = configparser.ConfigParser()
@@ -59,7 +68,14 @@ def load_config() -> Configuration | None:
         error(f'Setup file not found: "{setup_filepath}"')
         return None
 
-    data_directory = Path(__file__).parent.resolve() / setup.get('SETUP', 'data_directory', fallback = './data/')
+    return Path(__file__).parent.resolve() / setup.get('SETUP', 'data_directory', fallback = './data/')
+
+
+def load_config() -> Configuration | None:
+    
+    data_directory = get_data_directory()
+
+    if data_directory is None: return None
 
     config = configparser.ConfigParser()
     config.optionxform = str # Bit hacky but ¯\_(ツ)_/¯
@@ -67,6 +83,7 @@ def load_config() -> Configuration | None:
 
     if len(res) == 0:
         error(f'Config file not found: "{data_directory / "config.ini"}"')
+        error('If the config is broken, consider running with "--reset-config"')
         return None
 
     #print(Path(__file__).parent.resolve() / 'setup.ini')
@@ -92,4 +109,47 @@ def load_config() -> Configuration | None:
         used_proxies = dict_from_section(config, 'PROXIES'),
     )
 
+def setup_config_dir(directory: Path) -> bool:
 
+    if not is_directory(directory): 
+        error('Invalid config location (not a directory)')
+        return False
+    
+    setup_filepath = Path(__file__).parent.resolve() / 'setup.ini'
+    default_conf   = Path(__file__).parent.resolve() / 'data/'
+    new_directory = directory / '.overreacher/'
+
+    # Make the directory and move default conf files (if it doest exist)
+    if not is_directory(new_directory):
+        makedirs(new_directory)
+        
+        # Copy the default files
+        copy_file(default_conf / 'attacks.json', new_directory)
+        copy_file(default_conf / 'config.ini', new_directory)
+
+    else:
+        info('Setting existing config directory')
+        # TODO: Check if the required files exist
+
+    # Update the setup.ini
+    new_setup = configparser.ConfigParser()
+    new_setup.add_section('SETUP')
+    new_setup.set('SETUP', 'data_directory', str(directory / '.overreacher/'))
+
+    with open(setup_filepath, 'w') as f:
+        new_setup.write(f)
+
+    return True
+
+def default_config_dir() -> None:
+    setup_filepath = Path(__file__).parent.resolve() / 'setup.ini'
+    confdir = Path(__file__).parent.resolve() / 'data/'
+
+    setup_file = configparser.ConfigParser()
+    setup_file.add_section('SETUP')
+    setup_file.set('SETUP', 'data_directory', str(confdir.resolve()))
+
+    with open(setup_filepath, 'w') as f:
+        setup_file.write(f)
+
+    good('Reset to default configuration path')

@@ -1,14 +1,33 @@
 
 from . import __version__
-from .config import Configuration, load_config
+from .config import Configuration, load_config, setup_config_dir, default_config_dir
 from .arguments import ScanArguments,get_arguments
 from .visuals import reload_no_color, display_banner, display_scan_results, good, error, info
 
 from .execute import scan 
+
+from pathlib import Path
 import json, sys
 
 def main():
     
+    # This is hacky, make it better
+    # (this needs to be done before the config loading, incase of invalid config)
+    if '--make-config' in sys.argv:
+        from os import getcwd
+
+        if setup_config_dir(Path(getcwd())):
+            good('New config location setup.')
+        else:
+            error('Unable to set new configuration location.')
+
+        return
+    
+    if '--reset-config' in sys.argv:
+        info('Resetting configuration...')
+        default_config_dir()
+        return
+
     config = load_config()
     
     if config is None:
