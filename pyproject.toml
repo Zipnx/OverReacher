@@ -11,6 +11,8 @@ authors = [
 ]
 classifiers = [
     "Programming Language :: Python",
+    "Topic :: Security",
+    "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = [
     "requests",

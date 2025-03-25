@@ -1,5 +1,5 @@
 
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 import configparser
@@ -7,7 +7,7 @@ import configparser
 from .visuals import error, good, info
 
 from shutil import copy as copy_file
-from os import copy_file_range, makedirs
+from os import makedirs
 from os.path import isdir as is_directory
 from os.path import exists as file_exists
 

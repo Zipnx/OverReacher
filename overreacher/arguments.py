@@ -80,7 +80,7 @@ def parse_proxy_args(raw_proxies: List[str]) -> MutableMapping[str, str] | None:
             return None
 
         proto, proxy = raw.split('=', 1)
-        proxies[proto] = proto
+        proxies[proto] = proxy
 
     return proxies
 
@@ -105,14 +105,7 @@ def parse_arguments(default_arguments: ArgumentDefaults) -> Namespace:
     parser.add_argument('-o', '--output', type = str, 
         default = default_arguments.output_file,
         help = 'Path to an output file'
-    )
-    
-    # TODO: Implement at some point
-    #parser.add_argument('-f', '--format', 
-    #    choices = ['txt', 'json'], 
-    #    default = 'txt',
-    #    help = 'Save format (DEFAULT=txt)'
-    #)
+    ) 
     
     parser.add_argument('-m', '--methods', type = str, default = default_arguments.http_methods,
         help = f'Comma seperated http methods to use (DEFAULT={default_arguments.http_methods})'
@@ -173,7 +166,8 @@ def format_arguments(raw_args: Namespace, config: Configuration) -> ScanArgument
     urls: List[str] = []
 
     if raw_args.urls is None and raw_args.inputs is None:
-        urls = read_urls_stdin()
+        if not sys.platform.startswith('win'):
+            urls = read_urls_stdin()
     elif raw_args.urls is not None:
         urls = filter_urls(raw_args.urls.split(',')) 
     elif raw_args.inputs is not None:
