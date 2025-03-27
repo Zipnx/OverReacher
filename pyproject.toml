@@ -2,11 +2,15 @@
 [project]
 name = "OverReacher"
 version = "1.0.0"
+keywords = ["cors", "security", "pentest", "bugbounty", "tool", "automation"]
 description = "A scanner for CORS misconfiguration vulnerabilities"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
-license = "MIT"
+license = { file = 'LICENCE' }
 authors = [
+    {name = "Zipnx", email = "zipnx@protonmail.com"},
+]
+maintainers = [
     {name = "Zipnx", email = "zipnx@protonmail.com"},
 ]
 classifiers = [
@@ -31,8 +35,8 @@ dev = [
 overreacher = "overreacher:main"
 
 [project.urls]
-homepage = "https://github.com/Zipnx/OverReacher"
-repository = "https://github.com/Zipnx/OverReacher"
+Homepage = "https://github.com/Zipnx/OverReacher"
+Repository = "https://github.com/Zipnx/OverReacher"
 
 [build-system]
 build-backend = "setuptools.build_meta"
