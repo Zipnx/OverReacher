@@ -1,7 +1,7 @@
 
 [project]
 name = "OverReacher"
-version = "1.0.0"
+version = "1.0.1"
 keywords = ["cors", "security", "pentest", "bugbounty", "tool", "automation"]
 description = "A scanner for CORS misconfiguration vulnerabilities"
 readme = { file = "README.md", content-type = "text/markdown" }
@@ -37,6 +37,7 @@ overreacher = "overreacher:main"
 [project.urls]
 Homepage = "https://github.com/Zipnx/OverReacher"
 Repository = "https://github.com/Zipnx/OverReacher"
+Changelog = "https://github.com/Zipnx/OverReacher/blob/master/CHANGELOG.md"
 
 [build-system]
 build-backend = "setuptools.build_meta"
