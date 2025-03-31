@@ -1,6 +1,5 @@
 
-from collections.abc import MutableMapping
-from typing import List
+from typing import List, MutableMapping, Optional
 
 import sys
 from pathlib import Path
@@ -30,7 +29,7 @@ class ScanArguments:
     ignore_acac: bool   = False
     max_rps: int        = 100
 
-def parse_header_args(raw_headers: List[str]) -> MutableMapping[str, str] | None:
+def parse_header_args(raw_headers: List[str]) -> Optional[MutableMapping[str, str]]:
     '''
     Parse the headers that are passed in the form:
     ['Host: test', 'User-Agent': 'Something']
@@ -58,7 +57,7 @@ def parse_header_args(raw_headers: List[str]) -> MutableMapping[str, str] | None
 
     return headers
 
-def parse_proxy_args(raw_proxies: List[str]) -> MutableMapping[str, str] | None:
+def parse_proxy_args(raw_proxies: List[str]) -> Optional[MutableMapping[str, str]]:
     '''
     Parse the proxies that are passed in the form:
     ['http=socks5://127.0.0.1:9050', 'https=https://someproxy:443']
@@ -151,7 +150,7 @@ def parse_arguments(default_arguments: ArgumentDefaults) -> Namespace:
 
     return args
 
-def format_arguments(raw_args: Namespace, config: Configuration) -> ScanArguments | None:
+def format_arguments(raw_args: Namespace, config: Configuration) -> Optional[ScanArguments]:
     '''
     Format the arguments read from argparse into the proper format
     
@@ -219,7 +218,7 @@ def format_arguments(raw_args: Namespace, config: Configuration) -> ScanArgument
         max_rps = raw_args.rate
     )
 
-def get_arguments(config: Configuration) -> ScanArguments | None:
+def get_arguments(config: Configuration) -> Optional[ScanArguments]:
     '''
     Get, verify and format the commandline arguments into the ScanArguments dataclass
 

@@ -1,7 +1,6 @@
 
-from collections.abc import MutableMapping
 from enum import IntEnum
-from typing import List, Tuple, Optional, Self
+from typing import MutableMapping, List, Tuple, Optional
 from dataclasses import dataclass
 
 from os.path import realpath
@@ -25,9 +24,9 @@ class AttackMethod:
     success_msg: str
     is_passive: bool = False
 
-    process: dict | None = None
+    process: Optional[dict] = None
 
-    def set_proc(self, process_json: dict | None) -> Self:
+    def set_proc(self, process_json: Optional[dict]) -> 'AttackMethod':
         self.process = process_json
         return self
     
@@ -156,7 +155,7 @@ class AttackResult:
     elapsed: float
     status_code: int
     
-    payload: str | None
+    payload: Optional[str]
     allow_origin: str
     allow_creds: bool
 
@@ -173,7 +172,7 @@ SKIP_LIST: List[str] = []
 def process_attacks():
     return EXPLOITS
 
-def form_payload(target: Target, exploit: AttackMethod) -> str | None:
+def form_payload(target: Target, exploit: AttackMethod) -> Optional[str]:
     
     if exploit.process is None: return None
     proc = exploit.process

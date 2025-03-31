@@ -1,5 +1,5 @@
 
-from collections.abc import Mapping
+from typing import Mapping, Optional
 from dataclasses import dataclass
 from pathlib import Path
 import configparser
@@ -52,7 +52,7 @@ def dict_from_section(config: configparser.ConfigParser, section_name: str) -> M
         
     return result
 
-def get_data_directory() -> Path | None:
+def get_data_directory() -> Optional[Path]:
     setup_filepath = Path(__file__).parent.resolve() / 'setup.ini'
 
     # Make the setup.ini file if the tool is run for the first time
@@ -71,7 +71,7 @@ def get_data_directory() -> Path | None:
     return Path(__file__).parent.resolve() / setup.get('SETUP', 'data_directory', fallback = './data/')
 
 
-def load_config() -> Configuration | None:
+def load_config() -> Optional[Configuration]:
     
     data_directory = get_data_directory()
 
